@@ -8,7 +8,7 @@ registerModule('keuangan', function() {
       <div class="stats-grid" style="margin-bottom:18px">
         <div class="stat-card"><div class="s-label">Hutang Aktif</div><div class="s-value red" id="htAktif">0</div></div>
         <div class="stat-card"><div class="s-label">Total Hutang</div><div class="s-value yellow" id="htTotal">Rp 0</div></div>
-        <div class="stat-card"><div="s-label">Bayar Pending</div><div class="stat-card"><div class="s-value purple" id="htPending">0</div></div></div>
+        <div class="stat-card"><div="s-label">Bayar Pending</div><div class="stat-card"><div class="s-label">Bayar Pending</div><div class="s-value purple" id="htPending">0</div></div>
       </div>
       <div class="obat-toolbar">
         <div class="search-box"><i class="fas fa-search"></i><input type="text" id="htSearch" placeholder="Cari supplier, nomor..."></div>
@@ -31,6 +31,7 @@ registerModule('keuangan', function() {
       renderHtTable();
       document.getElementById('htAktif').textContent = allHutang.filter(h => h.status === 'aktif').length;
       document.getElementById('htTotal').textContent = 'Rp ' + fmt(allHutang.filter(h => h.status === 'aktif').reduce((s, h) => s + (h.total - (h.sudahBayar || 0)), 0));
+      document.getElementById('htPending').textContent = allHutangBayar.filter(b => b.status === 'pending').length;
     });
   }
 
@@ -111,7 +112,7 @@ registerModule('keuangan', function() {
   function renderPiutang() {
     piutangPage.innerHTML = `
       <div class="stats-grid" style="margin-bottom:18px">
-        <div class="stat-card"><div class="slabel">Piutang Aktif</div><div class="s-value red" id="ptAktif">0</div></div>
+        <div class="stat-card"><div class="s-label">Piutang Aktif</div><div class="s-value red" id="ptAktif">0</div></div>
         <div class="stat-card"><div class="s-label">Total Piutang</div><div class="s-value yellow" id="ptTotal">Rp 0</div></div>
         <div class="stat-card"><div class="s-label">Bayar Pending</div><div class="s-value purple" id="ptPending">0</div></div>
       </div>
@@ -133,7 +134,7 @@ registerModule('keuangan', function() {
       allPiutang = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       renderPtTable();
       document.getElementById('ptAktif').textContent = allPiutang.filter(p => p.status === 'aktif').length;
-      document.getElementById('ptTotal').textContent = 'Rp ' + fmt(allPiutang.filter(p => p.status === 'aktif').reduce((s, p) => s + (p.jumlah - (sudahBayar || 0)), 0));
+      document.getElementById('ptTotal').textContent = 'Rp ' + fmt(allPiutang.filter(p => p.status === 'aktif').reduce((s, p) => s + (p.jumlah - (p.sudahBayar || 0)), 0));
       document.getElementById('ptPending').textContent = allPiutang.filter(p => (p.status === 'aktif') && (p.bayarList || []).filter(b => b.status === 'pending').length).length;
     });
   }
