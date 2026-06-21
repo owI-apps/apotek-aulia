@@ -146,7 +146,7 @@ registerModule('karyawan', function() {
   }
 
   async function hapus(id, nama) { if (!confirm(`Hapus "${nama}"?`)) return; try { await db.collection('karyawan').doc(id).delete(); toast('Dihapus', 'success'); } catch (e) { toast('Gagal: ' + e.message, 'error'); } }
-  window.Kar = { edit, hapus, render: renderTable };
+  window.Kar = { edit, hapus, render };
 
   const obs = new MutationObserver(() => { if (page.classList.contains('active')) render(); });
   obs.observe(page, { attributes: true, attributeFilter: ['class'] });
