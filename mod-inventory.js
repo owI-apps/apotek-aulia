@@ -92,7 +92,7 @@ registerModule('inventory', function() {
       const obatList = window._obatList || [];
       const m = obatList.filter(o => (o.namaGenerik || '').toLowerCase().includes(v) || (o.kodeObat || '').toLowerCase().includes(v)).slice(0, 8);
       if (!m.length) { drop.classList.remove('show'); return; }
-      drop.innerHTML = m.map(o => `<div class="sd-item" data-id="${o.id}">${o.kodeObak} — ${o.namaGenerik}<div class="sd-sub">HPP: ${fmt(o.hargaBeli)} | Stok: ${o.stock || 0}</div></div>`).join('');
+      drop.innerHTML = m.map(o => `<div class="sd-item" data-id="${o.id}">${o.kodeObat} — ${o.namaGenerik}<div class="sd-sub">HPP: ${fmt(o.hargaBeli)} | Stok: ${o.stock || 0}</div></div>`).join('');
       drop.classList.add('show');
       drop.querySelectorAll('.sd-item').forEach(it => it.addEventListener('click', () => { addPbItem(it.dataset.id); drop.classList.remove('show'); document.getElementById('pbObSearch').value = ''; }));
     });
@@ -238,7 +238,7 @@ registerModule('inventory', function() {
     if (!obatList.length) { toast('Belum ada data obat', 'warning'); return; }
     const el = document.getElementById('soList');
     el.innerHTML = `<div class="trx-section"><h4><i class="fas fa-clipboard-list"></i> Input Stok Fisik (${obatList.length} obat)</h4><p style="font-size:12px;color:var(--muted);margin-bottom:16px">Isi stok fisik untuk setiap obat. Sistem akan menghitung selisih.</p>
-      <div class="table-wrap"><table><thead><tr><th>Obat</th><th class="num">Stok Sistem</th><th class="num">Stok Fisik</th><th class="num">Selisih</th></tr></thead><tbody>${obatList.map(o => `<tr><td>${o.kodeObak} — ${o.namaGenerik}</td><td class="num">${o.stock || 0}</td><td><input type="number" class="so-fisik" data-id="${o.id}" data-sistem="${o.stock || 0}" value="${o.stock || 0}" min="0" style="width:100px;padding:6px;background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--fg);font-family:var(--mono);font-size:12px;text-align:center;outline:none"></td><td class="num so-selisih" style="color:var(--muted)">0</td></tr>`).join('')}</tbody></table></div>
+      <div class="table-wrap"><table><thead><tr><th>Obat</th><th class="num">Stok Sistem</th><th class="num">Stok Fisik</th><th class="num">Selisih</th></tr></thead><tbody>${obatList.map(o => `<tr><td>${o.kodeObat} — ${o.namaGenerik}</td><td class="num">${o.stock || 0}</td><td><input type="number" class="so-fisik" data-id="${o.id}" data-sistem="${o.stock || 0}" value="${o.stock || 0}" min="0" style="width:100px;padding:6px;background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--fg);font-family:var(--mono);font-size:12px;text-align:center;outline:none"></td><td class="num so-selisih" style="color:var(--muted)">0</td></tr>`).join('')}</tbody></table></div>
     </div><div style="display:flex;gap:10px;margin-top:16px"><button class="btn btn-outline btn-sm" onclick="Inv.renderSoTable()" style="width:auto"><i class="fas fa-times"></i> Batal</button><button class="btn btn-primary btn-sm" id="soSaveBtn" style="width:auto;min-width:160px"><i class="fas fa-paper-plane"></i> Ajukan Opname</button></div>`;
 
     el.querySelectorAll('.so-fisik').forEach(inp => {
