@@ -44,7 +44,7 @@ registerModule('transaksi', function() {
     trxPasienId=null;trxPasienNama='';trxItems=[];trxRawatId=null;trxRawatData=null;
     trxTindApotek={gula:false,asam:false,kolestrol:false,tensi:false};
     document.getElementById('trxPsSearch').value='';document.getElementById('trxPsInfo').style.display='none';
-    document.getElementById('trxObatSearch').value='';document.getElementById('trxItemsList').innerHTML='';
+    document.getElementById('trxObSearch').value='';document.getElementById('trxItemsList').innerHTML='';
     renderSummary();
   }
 
@@ -79,7 +79,7 @@ registerModule('transaksi', function() {
     psIn.addEventListener('input',function(){const v=this.value.toLowerCase();if(!v){psDr.classList.remove('show');return}const m=trxPasienList.filter(p=>(p.nama||'').toLowerCase().includes(v)||(p.noRM||'').toLowerCase().includes(v)).slice(0,8);if(!m.length){psDr.classList.remove('show');return}psDr.innerHTML=m.map(p=>`<div class="sd-item" data-id="${p.id}" data-nama="${escAttr(p.nama)}">${p.noRM} — ${p.nama}<div class="sd-sub">${p.telepon||''}</div></div>`).join('');psDr.classList.add('show');psDr.querySelectorAll('.sd-item').forEach(it=>it.addEventListener('click',()=>{trxPasienId=it.dataset.id;trxPasienNama=it.dataset.nama;psIn.value=trxPasienNama;psDr.classList.remove('show');document.getElementById('trxPsInfo').style.display='block';document.getElementById('trxPsInfo').innerHTML=`<i class="fas fa-user-check" style="color:var(--accent)"></i> ${trxPasienNama}`}))});
     
     const obIn=document.getElementById('trxObSearch'),obDr=document.getElementById('trxObDrop');
-    obIn.addEventListener('input',function(){const v=this.value.toLowerCase();if(!v){obDr.classList.remove('show');return}const m=trxObatList.filter(o=>(o.namaGenerik||'').toLowerCase().includes(v)||(o.kodeObat||'').toLowerCase().includes(v)||(o.namaMerek||'').toLowerCase().includes(v)).slice(0,10);if(!m.length){obDr.classList.remove('show');return}obDr.innerHTML=m.map(o=>`<div class="sd-item" data-id="${o.id}">${o.kodeObak} — ${o.namaGenerik} ${o.namaMerek?'('+o.namaMerek+')':''} ${o.kekuatan||''}<div class="sd-sub">HPP: ${fmt(o.hargaBeli)} | Stok: ${o.stock||0} ${o.satuan||''}</div></div>`).join('');obDr.classList.add('show');obDr.querySelectorAll('.sd-item').forEach(it=>it.addEventListener('click',()=>{addTrxItem(it.dataset.id);obDr.classList.remove('show');obIn.value=''}))});
+    obIn.addEventListener('input',function(){const v=this.value.toLowerCase();if(!v){obDr.classList.remove('show');return}const m=trxObatList.filter(o=>(o.namaGenerik||'').toLowerCase().includes(v)||(o.kodeObat||'').toLowerCase().includes(v)||(o.namaMerek||'').toLowerCase().includes(v)).slice(0,10);if(!m.length){obDr.classList.remove('show');return}obDr.innerHTML=m.map(o=>`<div class="sd-item" data-id="${o.id}">${o.kodeObat} — ${o.namaGenerik} ${o.namaMerek?'('+o.namaMerek+')':''} ${o.kekuatan||''}<div class="sd-sub">HPP: ${fmt(o.hargaBeli)} | Stok: ${o.stock||0} ${o.satuan||''}</div></div>`).join('');obDr.classList.add('show');obDr.querySelectorAll('.sd-item').forEach(it=>it.addEventListener('click',()=>{addTrxItem(it.dataset.id);obDr.classList.remove('show');obIn.value=''}))});
     
     document.addEventListener('click',e=>{if(!e.target.closest('#trxPsSearch')&&!e.target.closest('#trxPsDrop'))psDr.classList.remove('show');if(!e.target.closest('#trxObSearch')&&!e.target.closest('#trxObDrop'))obDr.classList.remove('show')});
   }
@@ -163,7 +163,7 @@ registerModule('transaksi', function() {
       const nomor='TRX-'+ds+'-'+String(lastNum+1).padStart(4,'0');
       const hour=ts().getHours(), shift=hour<13?'pagi':'siang';
 
-      const trxData={nomor,tanggal:now(),tipe:trxTipe,pasienId:trxPasienId,pasienNama:trxPasienNama,shift,karyawanId:currentUser?.email||'',items:trxItems.map(it=>({obatId:it.obatId,nama:it.nama,hpp:it.hpp,hargaJual:isResep(trxTipe)?Math.round(it.hpp*margin()):it.hargaJual,qty:it.qty,racik:it.racik,subtotal:isResep(trxType)?Math.round(it.hpp*margin()*it.qty):it.hargaJual*it.qty})),tindakanApotek:trxTipe==='tindakan_apotek'?{...trxTindApotek}:null,rawatJalanId:trxRawatId,rawatJalanNomor:trxRawatData?.nomor||null,rawatJalanTotal:trxRawatData?.totalTindakan||0,jasaResep:h.bagiHasil.jasaResep,biayaResepLuar:h.bagiHasil.biayaLuar,totalObat:h.totalObat,totalRacik:h.totalRacik,totalTindakan:h.totalTindakan,totalTindakanApotekFee:h.bagiHasil.totalTindakanApotekFee,subtotal:h.subtotal,pembulatan:h.pembulatan,totalAkhir:h.totalAkhir,bagiHasil:h.bagiHasil,status:'selesai'};
+      const trxData={nomor,tanggal:now(),tipe:trxTipe,pasienId:trxPasienId,pasienNama:trxPasienNama,shift,karyawanId:currentUser?.email||'',items:trxItems.map(it=>({obatId:it.obatId,nama:it.nama,hpp:it.hpp,hargaJual:isResep(trxTipe)?Math.round(it.hpp*margin()):it.hargaJual,qty:it.qty,racik:it.racik,subtotal:isResep(trxTipe)?Math.round(it.hpp*margin()*it.qty):it.hargaJual*it.qty})),tindakanApotek:trxTipe==='tindakan_apotek'?{...trxTindApotek}:null,rawatJalanId:trxRawatId,rawatJalanNomor:trxRawatData?.nomor||null,rawatJalanTotal:trxRawatData?.totalTindakan||0,jasaResep:h.bagiHasil.jasaResep,biayaResepLuar:h.bagiHasil.biayaLuar,totalObat:h.totalObat,totalRacik:h.totalRacik,totalTindakan:h.totalTindakan,totalTindakanApotekFee:h.bagiHasil.totalTindakanApotekFee,subtotal:h.subtotal,pembulatan:h.pembulatan,totalAkhir:h.totalAkhir,bagiHasil:h.bagiHasil,status:'selesai'};
 
       const batch=db.batch();
       const trxRef=db.collection('transaksi').doc();
@@ -187,8 +187,6 @@ registerModule('transaksi', function() {
     finally{btn.disabled=false;btn.innerHTML='<i class="fas fa-save"></i> Simpan Transaksi'}
   }
 
-  function isResep(t){return t==='resep_klinik'||t==='resep_luar'}
-
   // Riwayat
   async function loadHist() {
     try{const snap=await db.collection('transaksi').orderBy('tanggal','desc').limit(30).get();trxHistory=snap.docs.map(d=>({id:d.id,...d.data()}));renderHist()}catch(e){}
@@ -203,7 +201,7 @@ registerModule('transaksi', function() {
   // Load supporting data
   db.collection('obat').onSnapshot(snap=>{trxObatList=snap.docs.map(d=>({id:d.id,...d.data()}))},()=>{});
   db.collection('pasien').onSnapshot(snap=>{trxPasienList=snap.docs.map(d=>({id:d.id,...d.data()}))},()=>{});
-
+  window.updItem=updItem;window.rmItem=rmItem;
   const obs=new MutationObserver(()=>{if(page.classList.contains('active'))render()});
   obs.observe(page,{attributes:true,attributeFilter:['class']});
   render();
