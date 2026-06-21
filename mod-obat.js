@@ -109,7 +109,7 @@ registerModule('obat', function() {
   document.getElementById('obBtnSave').addEventListener('click', async () => {
     const eid=document.getElementById('obEditId').value;
     const d={kodeObat:document.getElementById('obKode').value.trim(),namaGenerik:document.getElementById('obGenerik').value.trim(),namaMerek:document.getElementById('obMerek').value.trim(),kategori:document.getElementById('obKategori').value,sediaan:document.getElementById('obSediaan').value,kekuatan:document.getElementById('obKekuatan').value.trim(),satuan:document.getElementById('obSatuan').value,hargaBeli:parseFloat(document.getElementById('obHPP').value)||0,hargaJual:parseFloat(document.getElementById('obHargaJual').value)||0,stock:parseInt(document.getElementById('obStok').value)||0,minStock:parseInt(document.getElementById('obMinStok').value)||0,status:'aktif'};
-    if(!d.kodeObak){toast('Kode wajib','error');return}
+    if(!d.kodeObat){toast('Kode wajib','error');return}
     if(!d.namaGenerik){toast('Nama wajib','error');return}
     try{if(eid){await db.collection('obat').doc(eid).update(d);toast('Diperbarui','success')}else{d.createdAt=now();await db.collection('obat').add(d);toast('Ditambahkan','success')}closeModal('modalObat')}catch(e){toast('Gagal: '+e.message,'error')}
   });
