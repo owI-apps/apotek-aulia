@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="theme-color" content="#080E1A">
+  <title>Apotek Aulia</title>
+  <link rel="manifest" id="manifestLink">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%2310B981'/%3E%3Crect x='38' y='15' width='24' height='70' rx='4' fill='white'/%3E%3Crect x='15' y='38' width='70' height='24' rx='4' fill='white'/%3E%3C/svg%3E">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <style>
+    /* ========== CSS VARIABLES ========== */
+    :root {
+      --bg: #080E1A;
+      --surface: #0F1729;
+      --card: #162038;
+      --card-hover: #1C2A48;
+      --border: #1E3050;
+      --fg: #E2E8F0;
+      --muted: #64748B;
+      --accent: #10B981;
+      --accent-hover: #059669;
+      --accent-dim: rgba(16,185,129,0.08);
+      --accent-glow: rgba(16,185,129,0.15);
+      --warning: #F59E0B;
+      --danger: #EF4444;
+      --danger-dim: rgba(239,68,68,0.1);
+      --info: #3B82F6;
+      --sidebar-w: 260px;
+      --topbar-h: 64px;
+      --radius: 10px;
+      --font: 'Plus Jakarta Sans', sans-serif;
+      --mono: 'JetBrains Mono', monospace;
+    }
+
+    /* ========== RESET ========== */
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    html { font-size: 15px; }
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--fg);
+      min-height: 100vh;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    input, select, textarea, button { font-family: var(--font); }
+    ::-webkit-scrollbar { width:6px; height:6px; }
+    ::-webkit-scrollbar-track { background:transparent; }
+    ::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+
+    /* ========== TOAST ========== */
+    #toasts {
+      position:fixed; top:20px; right:20px; z-index:9999;
+      display:flex; flex-direction:column; gap:8px; pointer-events:none;
+    }
+    .toast {
+      pointer-events:auto;
+      padding:12px 20px; border-radius:var(--radius); font-size:13px; font-weight:500;
+      display:flex; align-items:center; gap:10px; min-width:280px;
+      box-shadow:0 8px 30px rgba(0,0,0,0.4);
+      animation: toastIn .3s ease;
+    }
+    .toast.success { background:rgba(16,185,129,.12); border:1px solid rgba(16,185,129,.25); color:var(--accent); }
+    .toast.error { background:rgba(239,68,68,.12); border:1px solid rgba(239,68,68,.25); color:var(--danger); }
+    .toast.info { background:rgba(59,130,246,.12); border:1px solid rgba(59,130,246,.25); color:var(--info); }
+    .toast.warning { background:rgba(245,158,11,.12); border:1px solid rgba(245,158,11,.25); color:var(--warning); }
+    .toast.out { animation: toastOut .3s ease forwards; }
+    @keyframes toastIn { from{opacity:0;transform:translateX(40px)} to{opacity:1;transform:translateX(0)} }
+    @keyframes toastOut { to{opacity:0;transform:translateX(40px)} }
+
+    /* ========== LOGIN SCREEN ========== */
+    #loginScreen {
+      min-height:100vh; display:flex; align-items:center; justify-content:center;
+      background: var(--bg);
+      position: relative; overflow: hidden;
+    }
+    #loginScreen::before {
+      content:''; position:absolute; top:-40%; left:-20%; width:80%; height:80%;
+      background: radial-gradient(ellipse, rgba(16,185,129,.06) 0%, transparent 70%);
+      pointer-events:none;
+    }
+    #loginScreen::after {
+      content:''; position:absolute; bottom:-30%; right:-10%; width:60%; height:60%;
+      background: radial-gradient(ellipse, rgba(59,130,246,.04) 0%, transparent 70%);
+      pointer-events:none;
+    }
+    .login-box {
+      position:relative; z-index:1; width:100%; max-width:420px; padding:20px;
+    }
+    .login-card {
+      background: var(--surface); border:1px solid var(--border);
+      border-radius: 16px; padding: 40px 36px;
+    }
+    .login-logo {
+      width:56px; height:56px; border-radius:14px;
+      background: linear-gradient(135deg, var(--accent), #059669);
+      display:flex; align-items:center; justify-content:center;
+      margin: 0 auto 20px; font-size:24px; color:white;
+    }
+    .login-card h1 { text-align:center; font-size:24px; font-weight:700; margin-bottom:4px; }
+    .login-card p { text-align:center; color:var(--muted); font-size:13px; margin-bottom:28px; }
+    .form-group { margin-bottom:18px; }
+    .form-group label {
+      display:block; font-size:12px; font-weight:600; color:var(--muted);
+      text-transform:uppercase; letter-spacing:.5px; margin-bottom:6px;
+    }
+    .form-group input, .form-group select, .form-group textarea {
+      width:100%; padding:11px 14px; background:var(--card); border:1px solid var(--border);
+      border-radius:8px; color:var(--fg); font-size:14px; outline:none;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .form-group input:focus, .form-group select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-dim);
+    }
+    .form-group input::placeholder { color:var(--muted); opacity:.5; }
+    .btn {
+      display:inline-flex; align-items:center; justify-content:center; gap:8px;
+      padding:11px 24px; border-radius:8px; font-size:14px; font-weight:600;
+      border:none; cursor:pointer; transition:all .2s; width:100%;
+    }
+    .btn-primary {
+      background:var(--accent); color:#080E1A;
+    }
+    .btn-primary:hover { background:var(--accent-hover); box-shadow:0 4px 20px var(--accent-glow); }
+    .btn-primary:disabled { opacity:.5; cursor:not-allowed; }
+    .btn-outline {
+      background:transparent; color:var(--fg); border:1px solid var(--border);
+    }
+    .btn-outline:hover { border-color:var(--accent); color:var(--accent); }
+    .btn-danger { background:var(--danger-dim); color:var(--danger); border:1px solid transparent; }
+    .btn-danger:hover { border-color:var(--danger); }
+    .btn-sm { padding:7px 14px; font-size:12px; width:auto; }
+    .login-error {
+      background:var(--danger-dim); color:var(--danger); padding:10px 14px;
+      border-radius:8px; font-size:13px; margin-bottom:16px; display:none;
+    }
+
+    /* ========== APP SHELL ========== */
+    #appShell { display:none; min-height:100vh; }
+
+    /* Sidebar */
+    #sidebar {
+      position:fixed; top:0; left:0; bottom:0; width:var(--sidebar-w);
+      background:var(--surface); border-right:1px solid var(--border);
+      display:flex; flex-direction:column; z-index:100;
+      transition: transform .3s ease;
+    }
+    .sidebar-head {
+      padding:20px 22px; border-bottom:1px solid var(--border);
+      display:flex; align-items:center; gap:12px;
+    }
+    .sidebar-head .s-logo {
+      width:38px; height:38px; border-radius:10px;
+      background:linear-gradient(135deg,var(--accent),#059669);
+      display:flex; align-items:center; justify-content:center;
+      font-size:16px; color:white; flex-shrink:0;
+    }
+    .sidebar-head .s-info h2 { font-size:15px; font-weight:700; line-height:1.2; }
+    .sidebar-head .s-info span { font-size:11px; color:var(--muted); }
+    .sidebar-nav { flex:1; padding:16px 12px; overflow-y:auto; }
+    .nav-section { margin-bottom:20px; }
+    .nav-section-title {
+      font-size:10px; font-weight:700; color:var(--muted); text-transform:uppercase;
+      letter-spacing:1.2px; padding:0 12px; margin-bottom:8px;
+    }
+    .nav-item {
+      display:flex; align-items:center; gap:12px; padding:10px 12px;
+      border-radius:8px; cursor:pointer; transition:all .15s;
+      color:var(--muted); font-size:13.5px; font-weight:500;
+      margin-bottom:2px; position:relative;
+    }
+    .nav-item:hover { background:var(--card); color:var(--fg); }
+    .nav-item.active {
+      background:var(--accent-dim); color:var(--accent);
+    }
+    .nav-item.active::before {
+      content:''; position:absolute; left:0; top:50%; transform:translateY(-50%);
+      width:3px; height:20px; background:var(--accent); border-radius:0 3px 3px 0;
+    }
+    .nav-item i { width:20px; text-align:center; font-size:14px; }
+    .nav-item .badge-fase {
+      margin-left:auto; font-size:9px; padding:2px 7px; border-radius:10px;
+      background:var(--card); color:var(--muted); font-weight:700;
+    }
+    .sidebar-foot {
+      padding:16px 18px; border-top:1px solid var(--border);
+      display:flex; align-items:center; gap:10px;
+    }
+    .sidebar-foot .avatar {
+      width:34px; height:34px; border-radius:8px; background:var(--card);
+      display:flex; align-items:center; justify-content:center;
+      font-size:13px; font-weight:700; color:var(--accent); flex-shrink:0;
+    }
+    .sidebar-foot .u-info { flex:1; min-width:0; }
+    .sidebar-foot .u-info .u-name { font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .sidebar-foot .u-info .u-role { font-size:11px; color:var(--muted); }
+    .sidebar-foot .logout-btn {
+      background:none; border:none; color:var(--muted); cursor:pointer;
+      padding:6px; border-radius:6px; transition:all .15s; font-size:14px;
+    }
+    .sidebar-foot .logout-btn:hover { color:var(--danger); background:var(--danger-dim); }
+
+    /* Overlay mobile */
+    #sidebarOverlay {
+      display:none; position:fixed; inset:0; background:rgba(0,0,0,.5);
+      z-index:99; backdrop-filter:blur(2px);
+    }
+
+    /* Main content */
+    #mainContent {
+      margin-left: var(--sidebar-w); min-height:100vh;
+      transition: margin-left .3s;
+    }
+    #topBar {
+      position:sticky; top:0; z-index:50; height:var(--topbar-h);
+      background:rgba(8,14,26,.85); backdrop-filter:blur(12px);
+      border-bottom:1px solid var(--border);
+      display:flex; align-items:center; padding:0 28px; gap:16px;
+    }
+    #menuToggle {
+      display:none; background:none; border:none; color:var(--fg);
+      font-size:18px; cursor:pointer; padding:6px;
+    }
+    #topBar h1 { font-size:17px; font-weight:700; flex:1; }
+    .topbar-right { display:flex; align-items:center; gap:12px; }
+    .conn-badge {
+      display:flex; align-items:center; gap:6px; padding:5px 12px;
+      border-radius:20px; font-size:11px; font-weight:600;
+      border:1px solid var(--border); background:var(--surface);
+    }
+    .conn-badge .dot {
+      width:7px; height:7px; border-radius:50%;
+    }
+    .conn-badge.online .dot { background:var(--accent); animation:pulse 2s infinite; }
+    .conn-badge.offline .dot { background:var(--danger); }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.7)} }
+
+    /* Pages */
+    .page-content { padding:28px; max-width:1200px; }
+    .page { display:none; animation: fadeIn .25s ease; }
+    .page.active { display:block; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+    /* Dashboard */
+    .welcome-bar {
+      background: linear-gradient(135deg, var(--card) 0%, rgba(16,185,129,.08) 100%);
+      border:1px solid var(--border); border-radius:var(--radius);
+      padding:24px 28px; margin-bottom:24px;
+    }
+    .welcome-bar h2 { font-size:20px; font-weight:700; margin-bottom:4px; }
+    .welcome-bar p { color:var(--muted); font-size:13px; }
+    .stats-grid {
+      display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+      gap:14px; margin-bottom:28px;
+    }
+    .stat-card {
+      background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+      padding:20px; transition:all .2s;
+    }
+    .stat-card:hover { border-color:var(--accent); transform:translateY(-2px); }
+    .stat-card .s-label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.8px; margin-bottom:8px; }
+    .stat-card .s-value { font-family:var(--mono); font-size:24px; font-weight:700; }
+    .stat-card .s-value.green { color:var(--accent); }
+    .stat-card .s-value.blue { color:var(--info); }
+    .stat-card .s-value.yellow { color:var(--warning); }
+    .stat-card .s-value.red { color:var(--danger); }
+
+    .section-title {
+      font-size:15px; font-weight:700; margin-bottom:16px;
+      display:flex; align-items:center; gap:8px;
+    }
+    .section-title i { color:var(--accent); font-size:14px; }
+
+    .quick-actions {
+      display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+      gap:12px; margin-bottom:28px;
+    }
+    .qa-card {
+      background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+      padding:18px; cursor:pointer; transition:all .2s; text-align:center;
+    }
+    .qa-card:hover { border-color:var(--accent); background:var(--accent-dim); }
+    .qa-card i { font-size:22px; color:var(--accent); margin-bottom:8px; display:block; }
+    .qa-card span { font-size:13px; font-weight:600; }
+
+    .checklist { list-style:none; }
+    .checklist li {
+      padding:10px 0; border-bottom:1px solid var(--border);
+      display:flex; align-items:center; gap:12px; font-size:13px;
+    }
+    .checklist li:last-child { border-bottom:none; }
+    .checklist .ck-box {
+      width:22px; height:22px; border-radius:6px; border:2px solid var(--border);
+      display:flex; align-items:center; justify-content:center; flex-shrink:0;
+      font-size:11px; color:transparent; transition:all .2s;
+    }
+    .checklist li.done .ck-box {
+      background:var(--accent); border-color:var(--accent); color:white;
+    }
+    .checklist li.done span { color:var(--muted); text-decoration:line-through; }
+
+    /* Pengaturan */
+    .settings-tabs {
+      display:flex; gap:4px; margin-bottom:24px; border-bottom:1px solid var(--border);
+      overflow-x:auto; padding-bottom:0;
+    }
+    .settings-tab {
+      padding:10px 18px; font-size:13px; font-weight:600; color:var(--muted);
+      cursor:pointer; border-bottom:2px solid transparent; transition:all .2s;
+      white-space:nowrap; background:none; border-top:none; border-left:none; border-right:none;
+    }
+    .settings-tab:hover { color:var(--fg); }
+    .settings-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+    .settings-panel { display:none; }
+    .settings-panel.active { display:block; }
+    .settings-section { margin-bottom:28px; }
+    .settings-section h3 {
+      font-size:14px; font-weight:700; margin-bottom:14px; padding-bottom:8px;
+      border-bottom:1px solid var(--border); color:var(--fg);
+    }
+    .settings-grid {
+      display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px;
+    }
+    .settings-grid .form-group { margin-bottom:0; }
+    .settings-grid .form-group input { font-family:var(--mono); font-size:13px; }
+    .skema-ref {
+      background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+      padding:18px; margin-top:16px;
+    }
+    .skema-ref h4 { font-size:13px; font-weight:700; margin-bottom:10px; color:var(--accent); }
+    .skema-ref table { width:100%; font-size:12px; }
+    .skema-ref th { text-align:left; padding:6px 8px; color:var(--muted); font-weight:600; border-bottom:1px solid var(--border); }
+    .skema-ref td { padding:6px 8px; border-bottom:1px solid rgba(30,48,80,.4); }
+    .skema-ref td:last-child { text-align:right; font-family:var(--mono); color:var(--accent); }
+    .save-bar {
+      position:sticky; bottom:0; background:rgba(8,14,26,.9); backdrop-filter:blur(8px);
+      padding:16px 0; margin-top:24px; border-top:1px solid var(--border);
+      display:flex; gap:12px; justify-content:flex-end;
+    }
+
+    /* Placeholder pages */
+    .placeholder-page {
+      text-align:center; padding:80px 20px;
+    }
+    .placeholder-page i { font-size:48px; color:var(--border); margin-bottom:20px; display:block; }
+    .placeholder-page h2 { font-size:22px; font-weight:700; margin-bottom:8px; }
+    .placeholder-page p { color:var(--muted); font-size:14px; margin-bottom:24px; max-width:400px; margin-left:auto; margin-right:auto; }
+    .placeholder-features {
+      text-align:left; max-width:360px; margin:0 auto; list-style:none;
+      background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+      padding:16px 20px;
+    }
+    .placeholder-features li {
+      padding:8px 0; border-bottom:1px solid var(--border); font-size:13px;
+      display:flex; align-items:center; gap:10px; color:var(--muted);
+    }
+    .placeholder-features li:last-child { border-bottom:none; }
+    .placeholder-features li i { color:var(--accent); font-size:11px; width:16px; }
+    .fase-badge {
+      display:inline-block; padding:3px 10px; border-radius:12px; font-size:11px;
+      font-weight:700; margin-bottom:16px;
+    }
+    .fase-1 { background:rgba(16,185,129,.12); color:var(--accent); }
+    .fase-2 { background:rgba(59,130,246,.12); color:var(--info); }
+    .fase-3 { background:rgba(245,158,11,.12); color:var(--warning); }
+    .fase-4 { background:rgba(168,85,247,.12); color:#A855F7; }
+    .fase-5 { background:rgba(239,68,68,.12); color:var(--danger); }
+
+    /* ========== RESPONSIVE ========== */
+    @media(max-width:768px) {
+      #sidebar { transform:translateX(-100%); }
+      #sidebar.open { transform:translateX(0); }
+      #sidebarOverlay.show { display:block; }
+      #mainContent { margin-left:0; }
+      #menuToggle { display:block; }
+      .page-content { padding:20px 16px; }
+      .stats-grid { grid-template-columns:repeat(2,1fr); }
+      .quick-actions { grid-template-columns:repeat(2,1fr); }
+      .settings-grid { grid-template-columns:1fr 1fr; }
+      .login-card { padding:28px 22px; }
+    }
+    @media(max-width:480px) {
+      .stats-grid { grid-template-columns:1fr; }
+      .settings-grid { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ========== TOAST ========== -->
+<div id="toasts"></div>
+
+<!-- ========== LOGIN SCREEN ========== -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-card">
+      <div class="login-logo"><i class="fas fa-prescription-bottle-medical"></i></div>
+      <h1>Apotek Aulia</h1>
+      <p>Sistem Manajemen Apotek & Klinik</p>
+      <div class="login-error" id="loginError"></div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="loginEmail" placeholder="email@apotek.com" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="loginPass" placeholder="Masukkan password" autocomplete="current-password">
+      </div>
+      <button class="btn btn-primary" id="loginBtn" style="margin-top:8px">
+        <i class="fas fa-sign-in-alt"></i> Masuk
+      </button>
+    </div>
+    <p style="text-align:center;margin-top:16px;font-size:11px;color:var(--muted)">
+      Data tersinkronisasi secara realtime via Firebase
+    </p>
+  </div>
+</div>
+
+<!-- ========== APP SHELL ========== -->
+<div id="appShell">
+  <div id="sidebarOverlay"></div>
+
+  <aside id="sidebar">
+    <div class="sidebar-head">
+      <div class="s-logo"><i class="fas fa-prescription-bottle-medical"></i></div>
+      <div class="s-info">
+        <h2 id="sidebarNama">Apotek Aulia</h2>
+        <span>Sistem Manajemen</span>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <div class="nav-section-title">Utama</div>
+        <div class="nav-item active" data-page="dashboard"><i class="fas fa-chart-line"></i> Dashboard</div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-title">Operasional</div>
+        <div class="nav-item" data-page="pasien"><i class="fas fa-user-injured"></i> Pasien <span class="badge-fase">F2</span></div>
+        <div class="nav-item" data-page="obat"><i class="fas fa-pills"></i> Obat & Stock <span class="badge-fase">F1</span></div>
+        <div class="nav-item" data-page="transaksi"><i class="fas fa-cash-register"></i> Transaksi <span class="badge-fase">F3</span></div>
+        <div class="nav-item" data-page="pembelian"><i class="fas fa-truck"></i> Pembelian <span class="badge-fase">F1</span></div>
+        <div class="nav-item" data-page="stock-opname"><i class="fas fa-clipboard-check"></i> Stock Opname <span class="badge-fase">F1</span></div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-title">Keuangan</div>
+        <div class="nav-item" data-page="payroll"><i class="fas fa-wallet"></i> Payroll <span class="badge-fase">F4</span></div>
+        <div class="nav-item" data-page="laporan"><i class="fas fa-file-invoice-dollar"></i> Laporan <span class="badge-fase">F5</span></div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-title">Sistem</div>
+        <div class="nav-item" data-page="pengaturan"><i class="fas fa-cog"></i> Pengaturan</div>
+      </div>
+    </nav>
+    <div class="sidebar-foot">
+      <div class="avatar" id="sidebarAvatar">A</div>
+      <div class="u-info">
+        <div class="u-name" id="sidebarUser">Admin</div>
+        <div class="u-role" id="sidebarRole">Administrator</div>
+      </div>
+      <button class="logout-btn" id="logoutBtn" title="Keluar"><i class="fas fa-sign-out-alt"></i></button>
+    </div>
+  </aside>
+
+  <main id="mainContent">
+    <header id="topBar">
+      <button id="menuToggle"><i class="fas fa-bars"></i></button>
+      <h1 id="pageTitle">Dashboard</h1>
+      <div class="topbar-right">
+        <div class="conn-badge online" id="connBadge">
+          <span class="dot"></span>
+          <span id="connText">Online</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="page-content">
+
+      <!-- ===== DASHBOARD ===== -->
+      <div id="page-dashboard" class="page active">
+        <div class="welcome-bar">
+          <h2 id="welcomeText">Selamat datang</h2>
+          <p id="welcomeDate"></p>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="s-label">Total Obat</div>
+            <div class="s-value green" id="dsTotalObat">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="s-label">Stok Menipis</div>
+            <div class="s-value red" id="dsStokRendah">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="s-label">Transaksi Hari Ini</div>
+            <div class="s-value blue" id="dsTrxHariIni">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="s-label">Pendapatan Hari Ini</div>
+            <div class="s-value yellow" id="dsPendapatan">Rp 0</div>
+          </div>
+        </div>
+
+        <div class="section-title"><i class="fas fa-bolt"></i> Aksi Cepat</div>
+        <div class="quick-actions">
+          <div class="qa-card" data-nav="transaksi"><i class="fas fa-plus-circle"></i><span>Transaksi Baru</span></div>
+          <div class="qa-card" data-nav="pasien"><i class="fas fa-user-plus"></i><span>Tambah Pasien</span></div>
+          <div class="qa-card" data-nav="obat"><i class="fas fa-pills"></i><span>Tambah Obat</span></div>
+          <div class="qa-card" data-nav="stock-opname"><i class="fas fa-clipboard-check"></i><span>Stock Opname</span></div>
+        </div>
+
+        <div class="section-title"><i class="fas fa-tasks"></i> Checklist Awal</div>
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:8px 20px;">
+          <ul class="checklist" id="checklist">
+            <li id="ck-config"><div class="ck-box"><i class="fas fa-check"></i></div><span>Lengkapi Pengaturan Apotek</span></li>
+            <li id="ck-obat"><div class="ck-box"><i class="fas fa-check"></i></div><span>Input Data Obat (min. 1)</span></li>
+            <li id="ck-karyawan"><div class="ck-box"><i class="fas fa-check"></i></div><span>Daftarkan Karyawan</span></li>
+            <li id="ck-trx"><div class="ck-box"><i class="fas fa-check"></i></div><span>Lakukan Transaksi Pertama</span></li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- ===== PASIEN (Placeholder) ===== -->
+      <div id="page-pasien" class="page">
+        <div class="placeholder-page">
+          <span class="fase-badge fase-2">FASE 2</span>
+          <i class="fas fa-user-injured"></i>
+          <h2>Modul Pasien</h2>
+          <p>Pendaftaran pasien, data rekam medis, dan riwayat transaksi per pasien</p>
+          <ul class="placeholder-features">
+            <li><i class="fas fa-check"></i> Pendaftaran pasien baru (No. RM otomatis)</li>
+            <li><i class="fas fa-check"></i> Data alergi obat & catatan khusus</li>
+            <li><i class="fas fa-check"></i> Pencarian pasien (nama / No. RM)</li>
+            <li><i class="fas fa-check"></i> Riwayat pembelian resep per pasien</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- ===== OBAT (Placeholder) ===== -->
+      <div id="page-obat" class="page">
+        <div class="placeholder-page">
+          <span class="fase-badge fase-1">FASE 1</span>
+          <i class="fas fa-pills"></i>
+          <h2>Modul Obat & Stock</h2>
+          <p>Master data obat, pencatatan stock masuk/keluar, dan alert stock rendah & expired</p>
+          <ul class="placeholder-features">
+            <li><i class="fas fa-check"></i> Master obat (150+ jenis, HPP, harga jual)</li>
+            <li><i class="fas fa-check"></i> Stock masuk (pembelian dari supplier)</li>
+            <li><i class="fas fa-check"></i> Stock keluar (otomatis saat transaksi)</li>
+            <li><i class="fas fa-check"></i> Stock opname & selisih</li>
+            <li><i class="fas fa-check"></i> Alert expired & stock di bawah minimum</li>
+            <li><i class="fas fa-check"></i> Import data obat dari Excel</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- ===== TRANSAKSI (Placeholder) ===== -->
+      <div id="page-transaksi" class="page">
+        <div class="placeholder-page">
+          <span class="fase-badge fase-3">FASE 3</span>
+          <i class="fas fa-cash-register"></i>
+          <h2>Modul Transaksi</h2>
+          <p>5 tipe transaksi: Resep Klinik, Resep Luar, Obat Bebas, Tindakan Klinik, Tindakan Apotek</p>
+          <ul class="placeholder-features">
+            <li><i class="fas fa-check"></i> Resep Klinik (jasa 60K + obat margin 35% + racik)</li>
+            <li><i class="fas fa-check"></i> Resep Luar (biaya 20K + obat margin 35% + racik)</li>
+            <li><i class="fas fa-check"></i> Obat Bebas (harga jual langsung)</li>
+            <li><i class="fas fa-check"></i> Tindakan Klinik (Cek 1, Cek 2, Konsultasi)</li>
+            <li><i class="fas fa-check"></i> Tindakan Apotek (Gula, Asam Urat, Kolestrol, Tensi)</li>
+            <li><i class="fas fa-check"></i> Pembulatan otomatis & hitung bagi hasil</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- ===== PEMBELIAN (Placeholder) ===== -->
+      <div id="page-pembelian" class="page">
+        <div class="placeholder-page">
+          <span class="fase-badge fase-1">FASE 1</span>
+          <i class="fas fa-truck"></i>
+          <h2>Modul Pembelian</h2>
+          <p>Pencatatan pembelian obat dari supplier, cash & kredit dengan termin</p>
+          <ul class="placeholder-features">
+            <li><i class="fas fa-check"></i> Input pembelian (cash / kredit)</li>
+            <li><i class="fas fa-check"></i> No. invoice & termin pembayaran</li>
+            <li><i class="fas fa-check"></i> Pelacakan hutang usaha</li>
+            <li><i class="fas fa-check"></i> Otomatis tambah stock</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- ===== STOCK OPNAME (Placeholder) ===== -->
+      <div id="page-stock-opname" class="page">
+        <div class="placeholder-page">
+          <span class="fase-badge fase-1">FASE 1</span>
+          <i class="fas fa-clipboard-check"></i>
+          <h2>Stock Opname</h2>
+          <p>Pencocokan stock fisik dengan stock sistem</p>
+          <ul class="placeholder-features">
+            <li><i class="fas fa-check"></i> Buat sesi opname baru</li>
+            <li><i class="fas fa-check"></i> Input stock fisik per obat</li>
+            <li><i class="fas fa-check"></i> Hitung selisih otomatis</li>
+            <li><i class="fas fa-check"></i> Adjustment stock & jurnal akuntansi</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- ===== PAYROLL (Placeholder) ===== -->
+      <div id="page-payroll" class="page">
+        <div class="placeholder-page">
+          <span class="fase-badge fase-4">FASE 4</span>
+          <i class="fas fa-wallet"></i>
+          <h2>Modul Payroll</h2>
+          <p>Perhitungan gaji otomatis berdasarkan skema bagi hasil yang kompleks</p>
+          <ul class="placeholder-features">
+            <li><i class="fas fa-check"></i> Data karyawan (dokter, perawat, apoteker, karyawan)</li>
+            <li><i class="fas fa-check"></i> Bagi hasil resep klinik (BH, JD, tuslah)</li>
+            <li><i class="fas fa-check"></i> Bagi hasil tindakan klinik & apotek</li>
+            <li><i class="fas fa-check"></i> Tunjangan omzet 2.5% dari margin</li>
+            <li><i class="fas fa-check"></i> Uang makan dari pembulatan</li>
+            <li><i class="fas fa-check"></i> Skema D.a (Tuslah, Racik, Tindakan, Omzet, Makan)</li>
+            <li><i class="fas fa-check"></i> Simpanan THR klinik & apotek</li>
+            <li><i class="fas fa-check"></i> Slip gaji per karyawan</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- ===== LAPORAN (Placeholder) ===== -->
+      <div id="page-laporan" class="page">
+        <div class="placeholder-page">
+          <span class="fase-badge fase-5">FASE 5</span>
+          <i class="fas fa-file-invoice-dollar"></i>
+          <h2>Modul Laporan Keuangan</h2>
+          <p>Akuntansi full double-entry dengan export Excel</p>
+          <ul class="placeholder-features">
+            <li><i class="fas fa-check"></i> Chart of Accounts (CoA)</li>
+            <li><i class="fas fa-check"></i> Jurnal umum (otomatis dari transaksi)</li>
+            <li><i class="fas fa-check"></i> Buku besar per akun</li>
+            <li><i class="fas fa-check"></i> Neraca saldo</li>
+            <li><i class="fas fa-check"></i> Laba Rugi</li>
+            <li><i class="fas fa-check"></i> Neraca (Balance Sheet)</li>
+            <li><i class="fas fa-check"></i> Arus Kas</li>
+            <li><i class="fas fa-check"></i> Export semua laporan ke Excel</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- ===== PENGATURAN (Functional) ===== -->
+      <div id="page-pengaturan" class="page">
+        <div class="settings-tabs">
+          <button class="settings-tab active" data-tab="tab-umum">Umum</button>
+          <button class="settings-tab" data-tab="tab-resep">Resep & Racik</button>
+          <button class="settings-tab" data-tab="tab-tindakan">Tindakan</button>
+          <button class="settings-tab" data-tab="tab-payroll">Payroll</button>
+        </div>
+
+        <!-- Tab Umum -->
+        <div class="settings-panel active" id="tab-umum">
+          <div class="settings-section">
+            <h3>Informasi Apotek</h3>
+            <div class="settings-grid">
+              <div class="form-group"><label>Nama Apotek</label><input type="text" id="cfg-nama"></div>
+              <div class="form-group"><label>Alamat</label><input type="text" id="cfg-alamat"></div>
+              <div class="form-group"><label>Telepon</label><input type="text" id="cfg-telepon"></div>
+            </div>
+          </div>
+          <div class="settings-section">
+            <h3>Margin Obat Resep</h3>
+            <div class="settings-grid">
+              <div class="form-group"><label>Margin (%)</label><input type="number" id="cfg-margin" min="0"></div>
+            </div>
+            <p style="font-size:12px;color:var(--muted);margin-top:8px;">Harga jual obat resep = HPP × (1 + margin%). Contoh: HPP 10.000, margin 35% → Harga jual 13.500</p>
+          </div>
+        </div>
+
+        <!-- Tab Resep -->
+        <div class="settings-panel" id="tab-resep">
+          <div class="settings-section">
+            <h3>Resep Klinik Sendiri</h3>
+            <div class="settings-grid">
+              <div class="form-group"><label>Jasa Resep (Rp)</label><input type="number" id="cfg-jasaResep" min="0"></div>
+              <div class="form-group"><label>Bagian Hasil Dokter (Rp)</label><input type="number" id="cfg-bhDokter" min="0"></div>
+              <div class="form-group"><label>Jasa Dokter (Rp)</label><input type="number" id="cfg-jdDokter" min="0"></div>
+              <div class="form-group"><label>Bagian Klinik dr Resep (Rp)</label><input type="number" id="cfg-bagianKlinik" min="0"></div>
+              <div class="form-group"><label>Tuslah (Rp)</label><input type="number" id="cfg-tuslah" min="0"></div>
+              <div class="form-group"><label>Kas / Laba (Rp)</label><input type="number" id="cfg-kasResep" min="0"></div>
+            </div>
+            <div class="skema-ref">
+              <h4>Pembagian Bagian Klinik (Rp <span id="ref-bagianKlinik">8.000</span>)</h4>
+              <table>
+                <tr><th>Perawat</th><td>50%</td><td id="ref-perawat">4.000</td></tr>
+                <tr><th>Pendaftaran</th><td>40%</td><td id="ref-daftar">3.200</td></tr>
+                <tr><th>THR Klinik</th><td>10%</td><td id="ref-thrKlinik">800</td></tr>
+              </table>
+            </div>
+          </div>
+          <div class="settings-section">
+            <h3>Resep Luar / Puskesmas</h3>
+            <div class="settings-grid">
+              <div class="form-group"><label>Biaya Resep Luar (Rp)</label><input type="number" id="cfg-biayaResepLuar" min="0"></div>
+              <div class="form-group"><label>Bagian Dokter (Rp)</label><input type="number" id="cfg-dokterLuar" min="0"></div>
+              <div class="form-group"><label>Laba Apotek (Rp)</label><input type="number" id="cfg-labaLuar" min="0"></div>
+            </div>
+          </div>
+          <div class="settings-section">
+            <h3>Racik</h3>
+            <div class="settings-grid">
+              <div class="form-group"><label>Biaya Racik / Item (Rp)</label><input type="number" id="cfg-racik" min="0"></div>
+            </div>
+            <p style="font-size:12px;color:var(--muted);margin-top:8px;">Dihitung per item obat yang diracik. Pembagiannya mengikuti Skema D.a</p>
+          </div>
+        </div>
+
+        <!-- Tab Tindakan -->
+        <div class="settings-panel" id="tab-tindakan">
+          <div class="settings-section">
+            <h3>Tindakan Klinik</h3>
+            <div class="settings-grid">
+              <div class="form-group"><label>Cek 1 (Rp)</label><input type="number" id="cfg-cek1" min="0"></div>
+              <div class="form-group"><label>Cek 2 (Rp)</label><input type="number" id="cfg-cek2" min="0"></div>
+            </div>
+            <div class="skema-ref">
+              <h4>Pembagian Tindakan Klinik</h4>
+              <table>
+                <tr><th>Dokter</th><td>50%</td></tr>
+                <tr><th>Perawat</th><td>20%</td></tr>
+                <tr><th>Pendaftaran</th><td>20%</td></tr>
+                <tr><th>THR Klinik</th><td>10%</td></tr>
+              </table>
+            </div>
+          </div>
+          <div class="settings-section">
+            <h3>Tindakan Apotek</h3>
+            <div class="settings-grid">
+              <div class="form-group"><label>Cek Gula Darah - Total (Rp)</label><input type="number" id="cfg-gulaTotal" min="0"></div>
+              <div class="form-group"><label>Cek Gula - Tindakan (Rp)</label><input type="number" id="cfg-gulaTindakan" min="0"></div>
+              <div class="form-group"><label>Cek Asam Urat - Total (Rp)</label><input type="number" id="cfg-asamTotal" min="0"></div>
+              <div class="form-group"><label>Cek Asam - Tindakan (Rp)</label><input type="number" id="cfg-asamTindakan" min="0"></div>
+              <div class="form-group"><label>Cek Kolestrol - Total (Rp)</label><input type="number" id="cfg-kolestrolTotal" min="0"></div>
+              <div class="form-group"><label>Cek Kolestrol - Tindakan (Rp)</label><input type="number" id="cfg-kolestrolTindakan" min="0"></div>
+            </div>
+            <p style="font-size:12px;color:var(--muted);margin-top:8px;">HPP = Total - Tindakan. Contoh: Gula 15.000 - 2.000 = HPP 13.000. Bagian Tindakan mengikuti Skema D.a</p>
+          </div>
+        </div>
+
+        <!-- Tab Payroll -->
+        <div class="settings-panel" id="tab-payroll">
+          <div class="settings-section">
+            <h3>Gaji Pokok Apotek</h3>
+            <div class="settings-grid">
+              <div class="form-group"><label>Apoteker (Rp)</label><input type="number" id="cfg-gajiApoteker" min="0"></div>
+              <div class="form-group"><label>Karyawan A (Rp)</label><input type="number" id="cfg-gajiA" min="0"></div>
+              <div class="form-group"><label>Karyawan B (Rp)</label><input type="number" id="cfg-gajiB" min="0"></div>
+              <div class="form-group"><label>Karyawan C (Rp)</label><input type="number" id="cfg-gajiC" min="0"></div>
+              <div class="form-group"><label>Karyawan D (Rp)</label><input type="number" id="cfg-gajiD" min="0"></div>
+            </div>
+          </div>
+          <div class="settings-section">
+            <h3>Tunjangan</h3>
+            <div class="settings-grid">
+              <div class="form-group"><label>Tunjangan Omzet (%)</label><input type="number" id="cfg-omzet" min="0" step="0.1"></div>
+              <div class="form-group"><label>Transport Total (Rp)</label><input type="number" id="cfg-transport" min="0"></div>
+            </div>
+            <p style="font-size:12px;color:var(--muted);margin-top:8px;">Omzet dihitung dari penjualan obat dikurangi HPP (margin bersih). Transport dibagi rata 5 karyawan apotek.</p>
+          </div>
+          <div class="settings-section">
+            <h3>Skema D.a (Referensi)</h3>
+            <div class="skema-ref">
+              <h4>Dipakai untuk: Tuslah, Racik, Tindakan Apotek, Tunjangan Omzet, Uang Makan</h4>
+              <table>
+                <tr><th>Apoteker</th><td>20% dari 80%</td><td>16.0%</td></tr>
+                <tr><th>Karyawan A</th><td>15% dari 80%</td><td>12.0%</td></tr>
+                <tr><th>Karyawan B</th><td>15% dari 80%</td><td>12.0%</td></tr>
+                <tr><th>Karyawan C</th><td>15% dari 80%</td><td>12.0%</td></tr>
+                <tr><th>Karyawan D</th><td>10% dari 80%</td><td>8.0%</td></tr>
+                <tr><th>THR Apotek</th><td>25% dari 80%</td><td>20.0%</td></tr>
+                <tr><th>PSA (Owner)</th><td>20% langsung</td><td>20.0%</td></tr>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="save-bar">
+          <button class="btn btn-outline btn-sm" id="btnResetConfig"><i class="fas fa-undo"></i> Reset Default</button>
+          <button class="btn btn-primary btn-sm" id="btnSaveConfig" style="width:auto;min-width:160px;"><i class="fas fa-save"></i> Simpan Pengaturan</button>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+// ================================================================
+//  KONFIGURASI FIREBASE — GANTI DENGAN MILIKMU
+// ================================================================
+const firebaseConfig = {
+  apiKey: "AIzaSyCGNs3OW1e6L33-qxbjGViN97buL1l09dM",
+  authDomain: "apotek-aulia.firebaseapp.com",
+  projectId: "apotek-aulia",
+  storageBucket: "apotek-aulia.firebasestorage.app",
+  messagingSenderId: "901043246916",
+  appId: "1:901043246916:web:783c348954e1b2754b6911",
+  measurementId: "G-K49KZ7FED2"
+};
+
+// ================================================================
+//  INISIALISASI
+// ================================================================
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const auth = firebase.auth();
+
+// Aktifkan offline persistence
+db.enablePersistence({ synchronizeTabs: true }).catch(err => {
+  if (err.code === 'failed-precondition') console.warn('[DB] Persistence gagal: multiple tabs');
+  else if (err.code === 'unimplemented') console.warn('[DB] Browser tidak support persistence');
+});
+
+// ================================================================
+//  DEFAULT KONFIGURASI
+// ================================================================
+const DEFAULT_CONFIG = {
+  namaApotek: 'Apotek Aulia',
+  alamat: '',
+  telepon: '',
+  marginObatResep: 35,
+  jasaResep: 60000,
+  bhDokter: 25000,
+  jdDokter: 1000,
+  bagianKlinikResep: 8000,
+  tuslah: 12000,
+  kasResep: 14000,
+  biayaResepLuar: 20000,
+  dokterLuar: 8000,
+  labaLuar: 12000,
+  racikPerItem: 500,
+  cek1: 2000,
+  cek2: 5000,
+  gulaTotal: 15000,
+  gulaTindakan: 2000,
+  asamTotal: 15000,
+  asamTindakan: 2000,
+  kolestrolTotal: 30000,
+  kolestrolTindakan: 2000,
+  gajiApoteker: 1500000,
+  gajiA: 1000000,
+  gajiB: 1000000,
+  gajiC: 1000000,
+  gajiD: 1000000,
+  persenOmzet: 2.5,
+  transportTotal: 550000
+};
+
+let appConfig = { ...DEFAULT_CONFIG };
+let currentUser = null;
+
+// ================================================================
+//  TOAST
+// ================================================================
+function toast(msg, type = 'info') {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  const icons = { success:'fa-check-circle', error:'fa-exclamation-circle', info:'fa-info-circle', warning:'fa-exclamation-triangle' };
+  el.innerHTML = `<i class="fas ${icons[type]}"></i> ${msg}`;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 300); }, 3500);
+}
+
+// ================================================================
+//  FORMAT ANGKA
+// ================================================================
+function fmt(n) { return new Intl.NumberFormat('id-ID').format(n || 0); }
+
+// ================================================================
+//  AUTH — LOGIN
+// ================================================================
+const loginScreen = document.getElementById('loginScreen');
+const appShell = document.getElementById('appShell');
+const loginError = document.getElementById('loginError');
+const loginBtn = document.getElementById('loginBtn');
+
+function showLoginError(msg) {
+  loginError.textContent = msg;
+  loginError.style.display = 'block';
+}
+
+loginBtn.addEventListener('click', () => {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  loginError.style.display = 'none';
+  loginBtn.disabled = true;
+  loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Masuk...';
+
+  auth.signInWithEmailAndPassword(email, pass)
+    .catch(err => {
+      let msg = 'Login gagal';
+      if (err.code === 'auth/user-not-found') msg = 'Email tidak terdaftar';
+      else if (err.code === 'auth/wrong-password') msg = 'Password salah';
+      else if (err.code === 'auth/invalid-email') msg = 'Format email tidak valid';
+      else if (err.code === 'auth/too-many-requests') msg = 'Terlalu banyak percobaan. Coba lagi nanti.';
+      showLoginError(msg);
+    })
+    .finally(() => {
+      loginBtn.disabled = false;
+      loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Masuk';
+    });
+});
+
+// Enter untuk login
+document.getElementById('loginPass').addEventListener('keypress', e => {
+  if (e.key === 'Enter') loginBtn.click();
+});
+
+// ================================================================
+//  AUTH STATE — OTOMATIS DETEKSI LOGIN
+// ================================================================
+auth.onAuthStateChanged(user => {
+  if (user) {
+    currentUser = user;
+    loginScreen.style.display = 'none';
+    appShell.style.display = 'block';
+    initApp();
+  } else {
+    currentUser = null;
+    loginScreen.style.display = 'flex';
+    appShell.style.display = 'none';
+  }
+});
+
+// ================================================================
+//  LOGOUT
+// ================================================================
+document.getElementById('logoutBtn').addEventListener('click', () => {
+  auth.signOut();
+  toast('Berhasil keluar', 'info');
+});
+
+// ================================================================
+//  NAVIGASI
+// ================================================================
+const navItems = document.querySelectorAll('.nav-item[data-page]');
+const pages = document.querySelectorAll('.page');
+const pageTitle = document.getElementById('pageTitle');
+const sidebar = document.getElementById('sidebar');
+const overlay = document.getElementById('sidebarOverlay');
+
+function navigateTo(pageId) {
+  navItems.forEach(n => n.classList.remove('active'));
+  pages.forEach(p => p.classList.remove('active'));
+  const targetNav = document.querySelector(`.nav-item[data-page="${pageId}"]`);
+  const targetPage = document.getElementById(`page-${pageId}`);
+  if (targetNav) targetNav.classList.add('active');
+  if (targetPage) targetPage.classList.add('active');
+  const titles = {
+    dashboard:'Dashboard', pasien:'Pasien', obat:'Obat & Stock',
+    transaksi:'Transaksi', pembelian:'Pembelian', 'stock-opname':'Stock Opname',
+    payroll:'Payroll', laporan:'Laporan', pengaturan:'Pengaturan'
+  };
+  pageTitle.textContent = titles[pageId] || 'Dashboard';
+  // Tutup sidebar di mobile
+  sidebar.classList.remove('open');
+  overlay.classList.remove('show');
+}
+
+navItems.forEach(item => {
+  item.addEventListener('click', () => navigateTo(item.dataset.page));
+});
+
+// Quick actions di dashboard
+document.querySelectorAll('.qa-card[data-nav]').forEach(card => {
+  card.addEventListener('click', () => navigateTo(card.dataset.nav));
+});
+
+// Hamburger menu
+document.getElementById('menuToggle').addEventListener('click', () => {
+  sidebar.classList.toggle('open');
+  overlay.classList.toggle('show');
+});
+overlay.addEventListener('click', () => {
+  sidebar.classList.remove('open');
+  overlay.classList.remove('show');
+});
+
+// ================================================================
+//  CONNECTION STATUS
+// ================================================================
+function updateConn() {
+  const badge = document.getElementById('connBadge');
+  const text = document.getElementById('connText');
+  if (navigator.onLine) {
+    badge.className = 'conn-badge online';
+    text.textContent = 'Online';
+  } else {
+    badge.className = 'conn-badge offline';
+    text.textContent = 'Offline';
+  }
+}
+window.addEventListener('online', () => { updateConn(); toast('Kembali online', 'success'); });
+window.addEventListener('offline', () => { updateConn(); toast('Koneksi terputus — data tersimpan lokal', 'warning'); });
+updateConn();
+
+// ================================================================
+//  PENGATURAN TABS
+// ================================================================
+document.querySelectorAll('.settings-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.settings-panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById(tab.dataset.tab).classList.add('active');
+  });
+});
+
+// ================================================================
+//  PENGATURAN — LOAD & SAVE
+// ================================================================
+const configFields = {
+  'cfg-nama': 'namaApotek', 'cfg-alamat': 'alamat', 'cfg-telepon': 'telepon',
+  'cfg-margin': 'marginObatResep',
+  'cfg-jasaResep': 'jasaResep', 'cfg-bhDokter': 'bhDokter', 'cfg-jdDokter': 'jdDokter',
+  'cfg-bagianKlinik': 'bagianKlinikResep', 'cfg-tuslah': 'tuslah', 'cfg-kasResep': 'kasResep',
+  'cfg-biayaResepLuar': 'biayaResepLuar', 'cfg-dokterLuar': 'dokterLuar', 'cfg-labaLuar': 'labaLuar',
+  'cfg-racik': 'racikPerItem',
+  'cfg-cek1': 'cek1', 'cfg-cek2': 'cek2',
+  'cfg-gulaTotal': 'gulaTotal', 'cfg-gulaTindakan': 'gulaTindakan',
+  'cfg-asamTotal': 'asamTotal', 'cfg-asamTindakan': 'asamTindakan',
+  'cfg-kolestrolTotal': 'kolestrolTotal', 'cfg-kolestrolTindakan': 'kolestrolTindakan',
+  'cfg-gajiApoteker': 'gajiApoteker', 'cfg-gajiA': 'gajiA', 'cfg-gajiB': 'gajiB',
+  'cfg-gajiC': 'gajiC', 'cfg-gajiD': 'gajiD',
+  'cfg-omzet': 'persenOmzet', 'cfg-transport': 'transportTotal'
+};
+
+function configToForm() {
+  for (const [elId, key] of Object.entries(configFields)) {
+    const el = document.getElementById(elId);
+    if (el) el.value = appConfig[key] ?? '';
+  }
+  // Update referensi pembagian klinik
+  const bk = appConfig.bagianKlinikResep || 8000;
+  document.getElementById('ref-bagianKlinik').textContent = fmt(bk);
+  document.getElementById('ref-perawat').textContent = fmt(bk * 0.5);
+  document.getElementById('ref-daftar').textContent = fmt(bk * 0.4);
+  document.getElementById('ref-thrKlinik').textContent = fmt(bk * 0.1);
+}
+
+function formToConfig() {
+  for (const [elId, key] of Object.entries(configFields)) {
+    const el = document.getElementById(elId);
+    if (el) {
+      const val = el.value.trim();
+      appConfig[key] = (key === 'namaApotek' || key === 'alamat' || key === 'telepon')
+        ? val
+        : parseFloat(val) || 0;
+    }
+  }
+}
+
+async function loadConfig() {
+  try {
+    const doc = await db.collection('pengaturan').doc('config').get();
+    if (doc.exists) {
+      appConfig = { ...DEFAULT_CONFIG, ...doc.data() };
+    }
+    configToForm();
+    // Update sidebar nama
+    document.getElementById('sidebarNama').textContent = appConfig.namaApotek || 'Apotek Aulia';
+    document.title = appConfig.namaApotek || 'Apotek Aulia';
+  } catch (err) {
+    console.error('Gagal load config:', err);
+    configToForm();
+  }
+}
+
+async function saveConfig() {
+  formToConfig();
+  try {
+    await db.collection('pengaturan').doc('config').set(appConfig, { merge: true });
+    document.getElementById('sidebarNama').textContent = appConfig.namaApotek || 'Apotek Aulia';
+    document.title = appConfig.namaApotek || 'Apotek Aulia';
+    toast('Pengaturan tersimpan', 'success');
+    updateChecklist();
+  } catch (err) {
+    toast('Gagal menyimpan: ' + err.message, 'error');
+  }
+}
+
+document.getElementById('btnSaveConfig').addEventListener('click', saveConfig);
+document.getElementById('btnResetConfig').addEventListener('click', () => {
+  if (confirm('Reset semua pengaturan ke default?')) {
+    appConfig = { ...DEFAULT_CONFIG };
+    configToForm();
+    toast('Pengaturan direset ke default', 'warning');
+  }
+});
+
+// ================================================================
+//  DASHBOARD — INIT
+// ================================================================
+function initDashboard() {
+  // Welcome text
+  const now = new Date();
+  const hour = now.getHours();
+  let salam = 'Selamat pagi';
+  if (hour >= 11 && hour < 15) salam = 'Selamat siang';
+  else if (hour >= 15 && hour < 18) salam = 'Selamat sore';
+  else if (hour >= 18 || hour < 5) salam = 'Selamat malam';
+  
+  const displayName = currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Admin';
+  document.getElementById('welcomeText').textContent = `${salam}, ${displayName}`;
+
+  const options = { weekday:'long', year:'numeric', month:'long', day:'numeric' };
+  document.getElementById('welcomeDate').textContent = now.toLocaleDateString('id-ID', options);
+
+  // User info di sidebar
+  document.getElementById('sidebarUser').textContent = displayName;
+  document.getElementById('sidebarAvatar').textContent = displayName.charAt(0).toUpperCase();
+  
+  const roleMap = { pendaftaran:'Pendaftaran', apotek:'Apotek', admin:'Administrator' };
+  // Role disimpan di customClaims atau kita baca dari email — untuk sementara hardcode
+  document.getElementById('sidebarRole').textContent = 'Administrator';
+}
+
+// ================================================================
+//  DASHBOARD — CHECKLIST
+// ================================================================
+async function updateChecklist() {
+  try {
+    // Cek apakah config sudah diubah dari default
+    const configChanged = appConfig.namaApotek !== 'Apotek Aulia' || appConfig.alamat !== '';
+    document.getElementById('ck-config').classList.toggle('done', configChanged);
+
+    // Cek ada obat belum
+    const obatSnap = await db.collection('obat').limit(1).get();
+    document.getElementById('ck-obat').classList.toggle('done', !obatSnap.empty);
+
+    // Cek ada karyawan belum
+    const karSnap = await db.collection('karyawan').limit(1).get();
+    document.getElementById('ck-karyawan').classList.toggle('done', !karSnap.empty);
+
+    // Cek ada transaksi belum
+    const trxSnap = await db.collection('transaksi').limit(1).get();
+    document.getElementById('ck-trx').classList.toggle('done', !trxSnap.empty);
+  } catch (err) {
+    // Offline atau belum ada data — biarkan unchecked
+  }
+}
+
+// ================================================================
+//  INIT APP (dipanggil setelah login berhasil)
+// ================================================================
+async function initApp() {
+  initDashboard();
+  await loadConfig();
+  updateChecklist();
+}
+
+// ================================================================
+//  PWA MANIFEST (dibuat dinamis)
+// ================================================================
+(function createManifest() {
+  const m = {
+    name: "Apotek Aulia",
+    short_name: "Apotek",
+    description: "Sistem Manajemen Apotek & Klinik",
+    start_url: ".",
+    display: "standalone",
+    background_color: "#080E1A",
+    theme_color: "#10B981",
+    icons: [{
+      src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%2310B981'/%3E%3Crect x='38' y='15' width='24' height='70' rx='4' fill='white'/%3E%3Crect x='15' y='38' width='70' height='24' rx='4' fill='white'/%3E%3C/svg%3E",
+      sizes: "any",
+      type: "image/svg+xml"
+    }]
+  };
+  const blob = new Blob([JSON.stringify(m)], { type: 'application/json' });
+  document.getElementById('manifestLink').href = URL.createObjectURL(blob);
+})();
+
+// ================================================================
+//  SERVICE WORKER (dibuat dinamis untuk single-file)
+// ================================================================
+if ('serviceWorker' in navigator) {
+  const swCode = `
+    const CACHE = 'apotek-aulia-v1';
+    self.addEventListener('install', e => {
+      e.waitUntil(caches.open(CACHE).then(c => c.addAll(['/'])));
+      self.skipWaiting();
+    });
+    self.addEventListener('activate', e => {
+      e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))));
+      self.clients.claim();
+    });
+    self.addEventListener('fetch', e => {
+      e.respondWith(
+        caches.match(e.request).then(r => r || fetch(e.request).then(res => {
+          if (res.status === 200 && res.type === 'basic') {
+            const clone = res.clone();
+            caches.open(CACHE).then(c => c.put(e.request, clone));
+          }
+          return res;
+        }).catch(() => caches.match('/')))
+      );
+    });
+  `;
+  const swBlob = new Blob([swCode], { type: 'application/javascript' });
+  // Catatan: Blob URL service worker mungkin tidak bekerja di semua browser.
+  // Untuk production, pisahkan ke file sw.js terpisah.
+  navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(() => {
+    console.log('[SW] Blob SW tidak didukung — offline caching via Firebase persistence saja.');
+  });
+}
+</script>
+</body>
+</html>
