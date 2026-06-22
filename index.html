@@ -20,13 +20,7 @@
   <div id="loginScreen">
     <div class="login-box">
       <div class="login-card">
-       <div class="login-logo">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="36" height="36">
-            <rect width="100" height="100" rx="20" fill="#10B981"/>
-            <rect x="38" y="15" width="24" height="70" rx="4" fill="white"/>
-            <rect x="15" y="38" width="70" height="24" rx="4" fill="white"/>
-          </svg>
-        </div>
+       <div class="s-logo"><img src="logo.png" alt="Logo" style="width:100%;height:100%;object-fit:contain;border-radius:10px"></div>
         <h1 id="loginTitle">Apotek Aulia</h1>
         <p>Sistem Manajemen Apotek & Klinik</p>
         <div class="login-error" id="loginError"></div>
@@ -42,13 +36,7 @@
     <div id="sidebarOverlay"></div>
     <aside id="sidebar">
       <div class="sidebar-head">
-  <div class="s-logo">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="24" height="24">
-      <rect width="100" height="100" rx="20" fill="#10B981"/>
-      <rect x="38" y="15" width="24" height="70" rx="4" fill="white"/>
-      <rect x="15" y="38" width="70" height="24" rx="4" fill="white"/>
-    </svg>
-  </div>
+  <div class="s-logo"><img src="logo.png" alt="Logo" style="width:100%;height:100%;object-fit:contain;border-radius:10px"></div>
   <div class="s-info"><h2 id="sidebarNama">Apotek Aulia</h2><span>Sistem Manajemen</span></div>
 </div>
       <nav class="sidebar-nav" id="sidebarNav">
@@ -91,8 +79,9 @@
         <button id="menuToggle"><i class="fas fa-bars"></i></button>
         <h1 id="pageTitle">Dashboard</h1>
         <div class="topbar-right">
-          <div class="role-badge" id="roleBadge"></div>
-          <div class="conn-badge online" id="connBadge"><span class="dot"></span><span id="connText">Online</span></div>
+        <button class="theme-toggle" id="themeToggle" title="Ganti Tema"><i class="fas fa-moon"></i></button>
+        <div class="role-badge" id="roleBadge"></div>
+        <div class="conn-badge online" id="connBadge"><span class="dot"></span><span id="connText">Online</span></div>
         </div>
       </header>
       <div class="page-content">
