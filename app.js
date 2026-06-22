@@ -82,8 +82,8 @@ const CF_MAP = {
   'cfg-bagianKlinik':'bagianKlinikResep','cfg-tuslah':'tuslah','cfg-kasResep':'kasResep',
   'cfg-biayaResepLuar':'biayaResepLuar','cfg-dokterLuar':'dokterLuar','cfg-labaLuar':'labaLuar','cfg-racik':'racikPerItem',
   'cfg-cek1':'cek1','cfg-cek2':'cek2',
-  'cfg-gulaTotal':'gulaTotal','cfg-gulaTindakan':'gulaTindakan','cfg-asamTotal':'asamTotal','cfg-asamTindakan':'asamTindakan',
-  'cfg-kolestrolTotal':'kolestrolTotal','cfg-kolestrolTindakan':'kolestrolTindakan',
+  'cfg-gulaTotal':'gulaTotal','cfg-gulaTindangan':'gulaTindangan','cfg-asamTotal':'asamTotal','cfg-asamTindangan':'asamTindangan',
+  'cfg-kolestrolTotal':'kolestrolTotal','cfg-kolestrolTindangan':'kolestrolTindangan',
   'cfg-gajiApoteker':'gajiApoteker','cfg-gajiA':'gajiA','cfg-gajiB':'gajiB','cfg-gajiC':'gajiC','cfg-gajiD':'gajiD',
   'cfg-omzet':'persenOmzet','cfg-transport':'transportTotal'
 };
