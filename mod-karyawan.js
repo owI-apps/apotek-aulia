@@ -25,6 +25,7 @@ registerModule('karyawan', function() {
     // FIX CRASH: Hapus orderBy('jabatan') untuk menghindari error Composite Index
     db.collection('karyawan').orderBy('divisi').onSnapshot(snap => {
       allKar = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      window._karakList = allKar;
       renderTable();
       document.getElementById('karTotal').textContent = allKar.length;
       document.getElementById('karKlinik').textContent = allKar.filter(k => k.divisi === 'klinik').length;
