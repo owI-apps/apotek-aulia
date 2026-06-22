@@ -1,16 +1,14 @@
 registerModule('transaksi', function() {
-  var page = document.getElementById('page-transaksi');
-  var trxTipe = 'resep_klinik';
-  var trxPasienId = null;
-  var trxPasienNama = '';
-  var trxItems = [];
-  var trxRawatId = null;
-  var trxRawatData = null;
-  var trxTindApotek = { gula: false, asam: false, kolestrol: false, tensi: false };
-  var trxObatList = [];
-  var trxPasienList = [];
-  var trxHistory = [];
-  var editTrxId = null;
+  const page = document.getElementById('page-transaksi');
+  let trxTipe = 'resep_klinik';
+  let trxPasienId = null;
+  let trxPasienNama = '';
+  let trxItems = [];
+  let trxRawatId = null;
+  let trxRawatData = null;
+  let trxTindApotek = { gula: false, asam: false, kolestrol: false, tensi: false };
+  let editTrxId = null;
+  let trxHistory = [];
 
   function isResep(t) { return t === 'resep_klinik' || t === 'resep_luar'; }
   function getMargin() { return 1 + (C.marginObatResep || 35) / 100; }
@@ -63,18 +61,11 @@ registerModule('transaksi', function() {
 
   function trxReset() {
     editTrxId = null;
-    trxPasienId = null;
-    trxPasienNama = '';
-    trxItems = [];
-    trxRawatId = null;
-    trxRawatData = null;
+    trxPasienId = null; trxPasienNama = ''; trxItems = []; trxRawatId = null; trxRawatData = null;
     trxTindApotek = { gula: false, asam: false, kolestrol: false, tensi: false };
-    var psEl = document.getElementById('trxPsSearch');
-    if (psEl) psEl.value = '';
-    var psInfo = document.getElementById('trxPsInfo');
-    if (psInfo) psInfo.style.display = 'none';
-    var itemsEl = document.getElementById('trxItemsList');
-    if (itemsEl) itemsEl.innerHTML = '';
+    var psEl = document.getElementById('trxPsSearch'); if (psEl) psEl.value = '';
+    var psInfo = document.getElementById('trxPsInfo'); if (psInfo) psInfo.style.display = 'none';
+    var itemsEl = document.getElementById('trxItemsList'); if (itemsEl) itemsEl.innerHTML = '';
     var saveBtn = document.getElementById('trxSave');
     if (saveBtn) { saveBtn.innerHTML = '<i class="fas fa-save"></i> Simpan Transaksi'; saveBtn.style.background = ''; saveBtn.style.color = ''; }
     renderSummary();
@@ -104,37 +95,31 @@ registerModule('transaksi', function() {
 
   function loadRawatPending() {
     var el = document.getElementById('trxRawatList');
-    db.collection('rawat_jalan').where('status', '==', 'menunggu_obat').orderBy('tanggal', 'desc').limit(20).get().then(function(snap) {
-      if (snap.empty) { el.innerHTML = '<p style="font-size:13px;color:var(--muted)">Tidak ada rawat menunggu</p>'; return; }
-      var h = '<select id="trxRawatSel" class="filter-select" style="width:100%"><option value="">-- Pilih Rawat Jalan --</option>';
-      snap.docs.forEach(function(d) {
-        var r = d.data();
-        var tind = [];
-        if (r.tindakan) {
-          if (r.tindakan.cek1) tind.push('Cek1');
-          if (r.tindakan.cek2) tind.push('Cek2');
-          if (r.tindakan.konsultasi) tind.push('Konsultasi');
-        }
-        h += '<option value="' + d.id + '">' + (r.nomor || '-') + ' — ' + (r.pasienNama || '-') + ' (' + tind.join(', ') + ') — Rp ' + fmt(r.totalTindakan || 0) + '</option>';
-      });
-      h += '</select>';
-      el.innerHTML = h;
-      document.getElementById('trxRawatSel').addEventListener('change', function() {
-        if (!this.value) { trxRawatId = null; trxRawatData = null; return; }
-        var rawat = null;
-        snap.docs.forEach(function(d) { if (d.id === this.value) rawat = d; }.bind(this));
-        if (rawat) {
-          trxRawatId = rawat.id;
-          trxRawatData = rawat.data();
-          trxPasienId = trxRawatData.pasienId;
-          trxPasienNama = trxRawatData.pasienNama;
-          document.getElementById('trxPsSearch').value = trxPasienNama;
-          document.getElementById('trxPsInfo').style.display = 'block';
-          document.getElementById('trxPsInfo').innerHTML = '<i class="fas fa-stethoscope" style="color:var(--purple)"></i> <strong>' + (trxRawatData.nomor || '') + '</strong> — ' + trxPasienNama;
-          renderSummary();
-        }
-      });
-    }).catch(function(e) { el.innerHTML = '<p style="font-size:13px;color:var(--muted)">Gagal memuat</p>'; });
+    var rawatGlobal = window._rawatList || [];
+    var pending = rawatGlobal.filter(r => r.status === 'menunggu_obat');
+    
+    if (!pending.length) { el.innerHTML = '<p style="font-size:13px;color:var(--muted)">Tidak ada rawat menunggu</p>'; return; }
+    var h = '<select id="trxRawatSel" class="filter-select" style="width:100%"><option value="">-- Pilih Rawat Jalan --</option>';
+    pending.forEach(r => {
+      var tind = [];
+      if (r.tindakan) { if(r.tindakan.gula) tind.push('Gula'); if(r.tindakan.asam) tind.push('Asam'); if(r.tindakan.kolestrol) tind.push('Kolestrol'); if(r.tindakan.nebu) tind.push('Nebu'); if(r.tindakan.lainnya) tind.push('Lainnya'); }
+      h += '<option value="' + r.id + '">' + (r.nomor || '-') + ' — ' + (r.pasienNama || '-') + ' (' + tind.join(', ') + ') — Rp ' + fmt(r.totalTindakan || 0) + '</option>';
+    });
+    h += '</select>';
+    el.innerHTML = h;
+    
+    document.getElementById('trxRawatSel').addEventListener('change', function() {
+      if (!this.value) { trxRawatId = null; trxRawatData = null; return; }
+      var rawat = pending.find(r => r.id === this.value);
+      if (rawat) {
+        trxRawatId = rawat.id; trxRawatData = rawat;
+        trxPasienId = rawat.pasienId; trxPasienNama = rawat.pasienNama;
+        document.getElementById('trxPsSearch').value = trxPasienNama;
+        document.getElementById('trxPsInfo').style.display = 'block';
+        document.getElementById('trxPsInfo').innerHTML = '<i class="fas fa-stethoscope" style="color:var(--purple)"></i> <strong>' + (rawat.nomor || '') + '</strong> — ' + trxPasienNama;
+        renderSummary();
+      }
+    });
   }
 
   function setupDropdowns() {
@@ -142,28 +127,21 @@ registerModule('transaksi', function() {
     var psDr = document.getElementById('trxPsDrop');
     psIn.addEventListener('input', function() {
       var v = this.value.toLowerCase();
+      var pasienList = window._pasienList || []; // OPTIMASI
       if (!v) { psDr.classList.remove('show'); return; }
-      var m = [];
-      for (var i = 0; i < trxPasienList.length; i++) {
-        var p = trxPasienList[i];
-        if ((p.nama || '').toLowerCase().indexOf(v) >= 0 || (p.noRM || '').toLowerCase().indexOf(v) >= 0) m.push(p);
-        if (m.length >= 8) break;
-      }
+      var m = pasienList.filter(p => (p.nama || '').toLowerCase().indexOf(v) >= 0 || (p.noRM || '').toLowerCase().indexOf(v) >= 0).slice(0, 8);
       if (!m.length) { psDr.classList.remove('show'); return; }
       var h = '';
       for (var i = 0; i < m.length; i++) {
         h += '<div class="sd-item" data-id="' + m[i].id + '" data-nama="' + escAttr(m[i].nama) + '">' + (m[i].noRM || '') + ' — ' + (m[i].nama || '') + '<div class="sd-sub">' + (m[i].telepon || '') + '</div></div>';
       }
-      psDr.innerHTML = h;
-      psDr.classList.add('show');
+      psDr.innerHTML = h; psDr.classList.add('show');
       var items = psDr.querySelectorAll('.sd-item');
       for (var i = 0; i < items.length; i++) {
         (function(it) {
           it.addEventListener('click', function() {
-            trxPasienId = it.dataset.id;
-            trxPasienNama = it.dataset.nama;
-            psIn.value = trxPasienNama;
-            psDr.classList.remove('show');
+            trxPasienId = it.dataset.id; trxPasienNama = it.dataset.nama;
+            psIn.value = trxPasienNama; psDr.classList.remove('show');
             document.getElementById('trxPsInfo').style.display = 'block';
             document.getElementById('trxPsInfo').innerHTML = '<i class="fas fa-user-check" style="color:var(--accent)"></i> ' + trxPasienNama;
           });
@@ -175,55 +153,41 @@ registerModule('transaksi', function() {
     var obDr = document.getElementById('trxObDrop');
     obIn.addEventListener('input', function() {
       var v = this.value.toLowerCase();
+      var obatList = window._obatList || []; // OPTIMASI
       if (!v) { obDr.classList.remove('show'); return; }
-      var m = [];
-      for (var i = 0; i < trxObatList.length; i++) {
-        var o = trxObatList[i];
-        if ((o.namaGenerik || '').toLowerCase().indexOf(v) >= 0 || (o.kodeObat || '').toLowerCase().indexOf(v) >= 0 || (o.namaMerek || '').toLowerCase().indexOf(v) >= 0) m.push(o);
-        if (m.length >= 10) break;
-      }
+      var m = obatList.filter(o => (o.namaGenerik || '').toLowerCase().indexOf(v) >= 0 || (o.kodeObat || '').toLowerCase().indexOf(v) >= 0 || (o.namaMerek || '').toLowerCase().indexOf(v) >= 0).slice(0, 10);
       if (!m.length) { obDr.classList.remove('show'); return; }
       var h = '';
       for (var i = 0; i < m.length; i++) {
         var o = m[i];
         h += '<div class="sd-item" data-id="' + o.id + '">' + (o.kodeObat || '') + ' — ' + (o.namaGenerik || '') + (o.namaMerek ? ' (' + o.namaMerek + ')' : '') + ' ' + (o.kekuatan || '') + '<div class="sd-sub">HPP: ' + fmt(o.hargaBeli) + ' | Stok: ' + (o.stock || 0) + ' ' + (o.satuan || '') + '</div></div>';
       }
-      obDr.innerHTML = h;
-      obDr.classList.add('show');
+      obDr.innerHTML = h; obDr.classList.add('show');
       var items = obDr.querySelectorAll('.sd-item');
       for (var i = 0; i < items.length; i++) {
         (function(it) {
           it.addEventListener('click', function() {
             addTrxItem(it.dataset.id);
-            obDr.classList.remove('show');
-            obIn.value = '';
+            obDr.classList.remove('show'); obIn.value = '';
           });
         })(items[i]);
       }
     });
-
-    document.addEventListener('click', function(e) {
-      if (!e.target.closest('#trxPsSearch') && !e.target.closest('#trxPsDrop')) psDr.classList.remove('show');
-      if (!e.target.closest('#trxObSearch') && !e.target.closest('#trxObDrop')) obDr.classList.remove('show');
-    });
   }
 
   function addTrxItem(obatId) {
-    var o = null;
-    for (var i = 0; i < trxObatList.length; i++) { if (trxObatList[i].id === obatId) { o = trxObatList[i]; break; } }
+    var obatList = window._obatList || [];
+    var o = obatList.find(x => x.id === obatId);
     if (!o) return;
-    for (var i = 0; i < trxItems.length; i++) { if (trxItems[i].obatId === obatId) { toast('Sudah ditambahkan', 'warning'); return; } }
+    if (trxItems.find(x => x.obatId === obatId)) { toast('Sudah ditambahkan', 'warning'); return; }
     trxItems.push({ obatId: obatId, nama: o.namaGenerik, merek: o.namaMerek || '', sediaan: o.sediaan, kekuatan: o.kekuatan, satuan: o.satuan, hpp: o.hargaBeli, hargaJual: o.hargaJual, qty: 1, racik: false, stock: o.stock || 0 });
-    renderItems();
-    renderSummary();
+    renderItems(); renderSummary();
   }
 
   function renderItems() {
     var el = document.getElementById('trxItemsList');
     if (!trxItems.length) { el.innerHTML = ''; return; }
-    var mg = getMargin();
-    var showRacik = isResep(trxTipe);
-    var h = '';
+    var mg = getMargin(); var showRacik = isResep(trxTipe); var h = '';
     for (var i = 0; i < trxItems.length; i++) {
       var it = trxItems[i];
       var harga = showRacik ? Math.round(it.hpp * mg * it.qty) : it.hargaJual * it.qty;
@@ -233,57 +197,28 @@ registerModule('transaksi', function() {
       h += '<div><input type="number" value="' + it.qty + '" min="1" max="' + it.stock + '" data-idx="' + i + '" class="trx-qty-input" style="width:100%;padding:8px;background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--fg);font-size:13px;text-align:center;font-family:var(--mono);outline:none"></div>';
       h += '<div style="text-align:right;font-family:var(--mono);font-size:13px;color:var(--accent);font-weight:600;padding:8px 0">' + fmt(harga) + '</div>';
       if (showRacik) h += '<div style="text-align:center"><input type="checkbox" id="rac' + i + '" ' + (it.racik ? 'checked' : '') + ' data-idx="' + i + '" class="trx-racik-input"><label for="rac' + i + '" style="font-size:11px;cursor:pointer;margin-left:4px">Racik</label></div>';
-      h += '<div style="text-align:center"><button class="btn btn-danger btn-xs" data-idx="' + i + '" class="trx-rm-btn"><i class="fas fa-times"></i></button></div>';
-      h += '</div>';
+      h += '<div style="text-align:center"><button class="btn btn-danger btn-xs" data-idx="' + i + '" class="trx-rm-btn"><i class="fas fa-times"></i></button></div></div>';
     }
     el.innerHTML = h;
 
     var qtyInputs = el.querySelectorAll('.trx-qty-input');
-    for (var i = 0; i < qtyInputs.length; i++) {
-      qtyInputs[i].addEventListener('change', function() {
-        var idx = parseInt(this.dataset.idx);
-        trxItems[idx].qty = Math.max(1, parseInt(this.value) || 1);
-        renderItems();
-        renderSummary();
-      });
-    }
+    for (var i = 0; i < qtyInputs.length; i++) { qtyInputs[i].addEventListener('change', function() { var idx = parseInt(this.dataset.idx); trxItems[idx].qty = Math.max(1, parseInt(this.value) || 1); renderItems(); renderSummary(); }); }
     var racikInputs = el.querySelectorAll('.trx-racik-input');
-    for (var i = 0; i < racikInputs.length; i++) {
-      racikInputs[i].addEventListener('change', function() {
-        var idx = parseInt(this.dataset.idx);
-        trxItems[idx].racik = this.checked;
-        renderItems();
-        renderSummary();
-      });
-    }
+    for (var i = 0; i < racikInputs.length; i++) { racikInputs[i].addEventListener('change', function() { var idx = parseInt(this.dataset.idx); trxItems[idx].racik = this.checked; renderItems(); renderSummary(); }); }
     var rmBtns = el.querySelectorAll('.trx-rm-btn');
-    for (var i = 0; i < rmBtns.length; i++) {
-      rmBtns[i].addEventListener('click', function() {
-        var idx = parseInt(this.dataset.idx);
-        trxItems.splice(idx, 1);
-        renderItems();
-        renderSummary();
-      });
-    }
+    for (var i = 0; i < rmBtns.length; i++) { rmBtns[i].addEventListener('click', function() { var idx = parseInt(this.dataset.idx); trxItems.splice(idx, 1); renderItems(); renderSummary(); }); }
   }
 
   function hitung() {
-    var isRK = trxTipe === 'resep_klinik';
-    var isRL = trxTipe === 'resep_luar';
-    var isOB = trxTipe === 'obat_bebas';
-    var isTA = trxTipe === 'tindakan_apotek';
-    var rows = [];
-    var totalObat = 0, totalHPP = 0, totalRacik = 0, jasaResep = 0, biayaLuar = 0;
-    var totalTind = 0, totalTAFee = 0, totalHPPA = 0, rawatCost = 0, subtotal = 0, pembulatan = 0;
-    var mg = getMargin();
+    var isRK = trxTipe === 'resep_klinik', isRL = trxTipe === 'resep_luar', isOB = trxTipe === 'obat_bebas', isTA = trxTipe === 'tindakan_apotek';
+    var rows = [], totalObat = 0, totalHPP = 0, totalRacik = 0, jasaResep = 0, biayaLuar = 0;
+    var totalTind = 0, totalTAFee = 0, totalHPPA = 0, rawatCost = 0, subtotal = 0, pembulatan = 0, mg = getMargin();
 
     if (isRK || isRL || isOB) {
       for (var i = 0; i < trxItems.length; i++) {
-        var it = trxItems[i];
-        var hpp = it.hpp * it.qty;
+        var it = trxItems[i]; var hpp = it.hpp * it.qty;
         var harga = (isRK || isRL) ? Math.round(it.hpp * mg * it.qty) : it.hargaJual * it.qty;
-        totalObat += harga;
-        totalHPP += hpp;
+        totalObat += harga; totalHPP += hpp;
         if (it.racik) totalRacik += C.racikPerItem;
         rows.push({ label: (it.nama || '-') + ' ' + (it.kekuatan || '') + ' x' + it.qty + (it.racik ? ' (R)' : ''), val: harga });
       }
@@ -317,82 +252,55 @@ registerModule('transaksi', function() {
   }
 
   function renderSummary() {
-    var h;
-    try { h = hitung(); } catch (e) { return; }
-    var tb = document.getElementById('trxSummaryTable');
-    if (!tb) return;
+    var h; try { h = hitung(); } catch (e) { return; }
+    var tb = document.getElementById('trxSummaryTable'); if (!tb) return;
     var html = '';
-    for (var i = 0; i < h.rows.length; i++) {
-      html += '<tr><td>' + h.rows[i].label + '</td><td>Rp ' + fmt(h.rows[i].val) + '</td></tr>';
-    }
+    for (var i = 0; i < h.rows.length; i++) { html += '<tr><td>' + h.rows[i].label + '</td><td>Rp ' + fmt(h.rows[i].val) + '</td></tr>'; }
     html += '<tr class="total-row"><td>TOTAL</td><td>Rp ' + fmt(h.totalAkhir) + '</td></tr>';
     tb.innerHTML = html;
   }
 
-  function doSave() {
-    var h;
-    try { h = hitung(); } catch (e) { toast('Error hitungan', 'error'); return; }
+  async function doSave() {
+    var h; try { h = hitung(); } catch (e) { toast('Error hitungan', 'error'); return; }
     if (h.totalAkhir <= 0) { toast('Tidak ada item', 'error'); return; }
     if ((isResep(trxTipe) || trxTipe === 'obat_bebas') && !trxItems.length) { toast('Tambahkan obat', 'error'); return; }
-    if (trxTipe === 'tindakan_apotek' && !trxTindApotek.gula && !trxTindApotek.asam && !trxTindApotek.kolestrol) { toast('Pilih tindakan', 'error'); return; }
+    if (trxTipe === 'tindakan_apotek' && !trxTindApotek.gula && !trxTindApotek.asam && !trxTindApotek.kolestrol && !trxTindApotek.tensi) { toast('Pilih tindakan', 'error'); return; }
 
     for (var i = 0; i < trxItems.length; i++) {
       if (trxItems[i].qty > (trxItems[i].stock || 0)) { toast('Stok ' + trxItems[i].nama + ' tidak cukup (' + trxItems[i].stock + ')', 'error'); return; }
     }
 
-    var btn = document.getElementById('trxSave');
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
-
-    var ds = ts().toISOString().slice(0, 10).replace(/-/g, '');
+    var btn = document.getElementById('trxSave'); btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
     var mg = getMargin();
-    db.collection('transaksi').where('nomor', '>=', 'TRX-' + ds).where('nomor', '<', 'TRX-' + ds + 'Z').orderBy('nomor', 'desc').limit(1).get().then(function(snap) {
-      var lastNum = snap.empty ? 0 : parseInt(snap.docs[0].data().nomor.slice(-4)) || 0;
-      var nomor = editTrxId ? (function(){ for(var x=0;x<trxHistory.length;x++){if(trxHistory[x].id===editTrxId) return trxHistory[x].nomor; } return 'TRX-'+ds+'-'+String(lastNum+1).padStart(4,'0'); })() : 'TRX-' + ds + '-' + String(lastNum + 1).padStart(4, '0');
-      var hour = ts().getHours();
-      var shift = hour < 13 ? 'pagi' : 'siang';
+    
+    try {
+      var nomor = editTrxId ? (function(){ for(var x=0;x<trxHistory.length;x++){if(trxHistory[x].id===editTrxId) return trxHistory[x].nomor; } return 'TRX-0001'; })() : await generateNomor('TRX');
+      var hour = ts().getHours(); var shift = hour < 13 ? 'pagi' : 'siang';
 
       var items = [];
       for (var i = 0; i < trxItems.length; i++) {
         var it = trxItems[i];
-        items.push({
-          obatId: it.obatId, nama: it.nama, hpp: it.hpp,
-          hargaJual: isResep(trxTipe) ? Math.round(it.hpp * mg) : it.hargaJual,
-          qty: it.qty, racik: it.racik,
-          subtotal: isResep(trxTipe) ? Math.round(it.hpp * mg * it.qty) : it.hargaJual * it.qty
-        });
+        items.push({ obatId: it.obatId, nama: it.nama, hpp: it.hpp, hargaJual: isResep(trxTipe) ? Math.round(it.hpp * mg) : it.hargaJual, qty: it.qty, racik: it.racik, subtotal: isResep(trxTipe) ? Math.round(it.hpp * mg * it.qty) : it.hargaJual * it.qty });
       }
 
       var trxData = {
-        nomor: nomor, tanggal: now(), tipe: trxTipe,
-        pasienId: trxPasienId, pasienNama: trxPasienNama,
-        shift: shift, karyawanId: currentUser ? currentUser.email : '',
-        items: items,
+        nomor: nomor, tanggal: now(), tipe: trxTipe, pasienId: trxPasienId, pasienNama: trxPasienNama,
+        shift: shift, karyawanId: currentUser ? currentUser.email : '', items: items,
         tindakanApotek: trxTipe === 'tindakan_apotek' ? { gula: trxTindApotek.gula, asam: trxTindApotek.asam, kolestrol: trxTindApotek.kolestrol, tensi: trxTindApotek.tensi } : null,
         rawatJalanId: trxRawatId, rawatJalanNomor: trxRawatData ? trxRawatData.nomor : null, rawatJalanTotal: trxRawatData ? trxRawatData.totalTindakan : 0,
         jasaResep: h.bagiHasil.jasaResep, biayaResepLuar: h.bagiHasil.biayaLuar,
         totalObat: h.bagiHasil.totalObat, totalRacik: h.bagiHasil.totalRacik, totalTindakan: h.bagiHasil.totalTindakan,
         totalTindakanApotekFee: h.bagiHasil.totalTindakanApotekFee,
-        subtotal: h.subtotal, pembulatan: h.pembulatan, totalAkhir: h.totalAkhir,
-        bagiHasil: h.bagiHasil, status: 'selesai'
+        subtotal: h.subtotal, pembulatan: h.pembulatan, totalAkhir: h.totalAkhir, bagiHasil: h.bagiHasil, status: 'selesai'
       };
 
       var batch = db.batch();
       var trxRef = db.collection('transaksi').doc();
 
-      // Jika mode edit, kembalikan stok lama dulu
       if (editTrxId) {
-        var oldDoc = null;
-        for (var x = 0; x < trxHistory.length; x++) { if (trxHistory[x].id === editTrxId) { oldDoc = trxHistory[x]; break; } }
-        if (oldDoc && oldDoc.items) {
-          for (var x = 0; x < oldDoc.items.length; x++) {
-            var oldIt = oldDoc.items[x];
-            if (oldIt.obatId) batch.update(db.collection('obat').doc(oldIt.obatId), { stock: firebase.firestore.FieldValue.increment(oldIt.qty) });
-          }
-        }
-        if (oldDoc && oldDoc.rawatJalanId) {
-          batch.update(db.collection('rawat_jalan').doc(oldDoc.rawatJalanId), { status: 'menunggu_obat', transaksiId: firebase.firestore.FieldValue.delete(), transaksiNomor: firebase.firestore.FieldValue.delete() });
-        }
+        var oldDoc = null; for (var x = 0; x < trxHistory.length; x++) { if (trxHistory[x].id === editTrxId) { oldDoc = trxHistory[x]; break; } }
+        if (oldDoc && oldDoc.items) { for (var x = 0; x < oldDoc.items.length; x++) { var oldIt = oldDoc.items[x]; if (oldIt.obatId) batch.update(db.collection('obat').doc(oldIt.obatId), { stock: firebase.firestore.FieldValue.increment(oldIt.qty) }); } }
+        if (oldDoc && oldDoc.rawatJalanId) { batch.update(db.collection('rawat_jalan').doc(oldDoc.rawatJalanId), { status: 'menunggu_obat', transaksiId: firebase.firestore.FieldValue.delete(), transaksiNomor: firebase.firestore.FieldValue.delete() }); }
         trxRef = db.collection('transaksi').doc(editTrxId);
       }
 
@@ -402,229 +310,72 @@ registerModule('transaksi', function() {
         for (var i = 0; i < trxItems.length; i++) {
           var it = trxItems[i];
           batch.update(db.collection('obat').doc(it.obatId), { stock: firebase.firestore.FieldValue.increment(-it.qty) });
-          batch.set(db.collection('stock_mutasi').doc(), {
-            obatId: it.obatId, tipe: 'keluar', jumlah: -it.qty,
-            stockSebelum: it.stock, stockSesudah: it.stock - it.qty,
-            keterangan: 'Penjualan ' + nomor, tanggal: now(),
-            userId: currentUser ? currentUser.email : '', referensi: nomor
-          });
+          batch.set(db.collection('stock_mutasi').doc(), { obatId: it.obatId, tipe: 'keluar', jumlah: -it.qty, stockSebelum: it.stock, stockSesudah: it.stock - it.qty, keterangan: 'Penjualan ' + nomor, tanggal: now(), userId: currentUser ? currentUser.email : '', referensi: nomor });
         }
       }
 
-      if (trxRawatId) {
-        batch.update(db.collection('rawat_jalan').doc(trxRawatId), { status: 'selesai', transaksiId: trxRef.id, transaksiNomor: nomor });
-      }
-
-      return batch.commit();
-    }).then(function() {
-      if (editTrxId) {
-        toast(nomor + ' — diperbarui', 'success');
-      } else {
-        toast(nomor + ' — Rp ' + fmt(h.totalAkhir), 'success');
-      }
-      editTrxId = null;
-      trxReset();
-      loadHist();
-    }).catch(function(e) {
-      toast('Gagal: ' + e.message, 'error');
-      console.error('Save trx error:', e);
-    }).finally(function() {
-      btn.disabled = false;
-      btn.innerHTML = '<i class="fas fa-save"></i> Simpan Transaksi';
-      btn.style.background = '';
-      btn.style.color = '';
-    });
+      if (trxRawatId) { batch.update(db.collection('rawat_jalan').doc(trxRawatId), { status: 'selesai', transaksiId: trxRef.id, transaksiNomor: nomor }); }
+      
+      await batch.commit();
+      
+      toast(editTrxId ? nomor + ' — diperbarui' : nomor + ' — Rp ' + fmt(h.totalAkhir), 'success');
+      editTrxId = null; trxReset(); loadHist();
+    } catch (e) {
+      toast('Gagal: ' + e.message, 'error'); console.error('Save trx error:', e);
+    } finally {
+      btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> Simpan Transaksi'; btn.style.background = ''; btn.style.color = '';
+    }
   }
 
-  // ================================================================
-  //  DETAIL TRANSAKSI
-  // ================================================================
   function detailTrx(id) {
-    var t = null;
-    for (var i = 0; i < trxHistory.length; i++) { if (trxHistory[i].id === id) { t = trxHistory[i]; break; } }
-    if (!t) return;
+    var t = null; for (var i = 0; i < trxHistory.length; i++) { if (trxHistory[i].id === id) { t = trxHistory[i]; break; } } if (!t) return;
     var labels = { resep_klinik: 'Resep Klinik', resep_luar: 'Resep Luar', obat_bebas: 'Obat Bebas', tindakan_apotek: 'Tindakan Apotek' };
-
-    var h = '<div class="trx-section"><h4><i class="fas fa-receipt"></i> Detail Transaksi</h4>';
-    h += '<div class="form-grid"><div class="form-group"><label>Nomor</label><input value="' + (t.nomor || '') + '" readonly></div>';
-    h += '<div class="form-group"><label>Tipe</label><input value="' + (labels[t.tipe] || t.tipe || '') + '" readonly></div>';
-    h += '<div class="form-group"><label>Pasien</label><input value="' + (t.pasienNama || '-') + '" readonly></div>';
-    h += '<div class="form-group"><label>Tanggal</label><input value="' + fmtDate(t.tanggal) + '" readonly></div>';
-    h += '<div class="form-group"><label>Shift</label><input value="' + (t.shift || '-') + '" readonly></div>';
-    h += '<div class="form-group"><label>Total</label><input value="Rp ' + fmt(t.totalAkhir) + '" readonly style="color:var(--accent);font-weight:700"></div></div></div>';
-
-    if (t.items && t.items.length) {
-      h += '<h4 style="margin:16px 0 10px;font-size:13px;font-weight:700;color:var(--muted)">Item Obat</h4>';
-      h += '<div class="table-wrap"><table><thead><tr><th>Nama</th><th class="num">HPP</th><th class="num">Jual</th><th>Qty</th><th>Racik</th><th class="num">Subtotal</th></tr></thead><tbody>';
-      for (var i = 0; i < t.items.length; i++) {
-        var it = t.items[i];
-        h += '<tr><td>' + (it.nama || '-') + '</td><td class="num">' + fmt(it.hpp) + '</td><td class="num">' + fmt(it.hargaJual) + '</td><td>' + it.qty + '</td><td>' + (it.racik ? 'Ya' : '-') + '</td><td class="num">' + fmt(it.subtotal) + '</td></tr>';
-      }
-      h += '</tbody></table></div>';
-    }
-
-    if (t.tipe === 'tindakan_apotek' && t.tindakanApotek) {
-      var ta = t.tindakanApotek;
-      h += '<h4 style="margin:16px 0 10px;font-size:13px;font-weight:700;color:var(--muted)">Tindakan Apotek</h4>';
-      h += '<div style="display:flex;flex-wrap:wrap;gap:8px">';
-      if (ta.gula) h += '<span class="pill pill-approved">Cek Gula Darah</span>';
-      if (ta.asam) h += '<span class="pill pill-approved">Cek Asam Urat</span>';
-      if (ta.kolestrol) h += '<span class="pill pill-approved">Cek Kolestrol</span>';
-      if (ta.tensi) h += '<span class="pill pill-draft">Cek Tensi</span>';
-      h += '</div>';
-    }
-
-    if (t.rawatJalanNomor) {
-      h += '<p style="margin-top:16px;font-size:13px;color:var(--purple)"><i class="fas fa-stethoscope"></i> Rawat Jalan: ' + t.rawatJalanNomor + ' (Rp ' + fmt(t.rawatJalanTotal || 0) + ')</p>';
-    }
-
-    h += '<div style="margin-top:20px"><button class="btn btn-outline btn-sm" onclick="Trx.closeDetail()" style="width:auto"><i class="fas fa-arrow-left"></i> Kembali ke Riwayat</button></div></div>';
-
-    var riwayatEl = document.querySelector('.trx-riwayat');
-    if (riwayatEl) riwayatEl.innerHTML = h;
+    var h = '<div class="trx-section"><h4><i class="fas fa-receipt"></i> Detail Transaksi</h4><div class="form-grid"><div class="form-group"><label>Nomor</label><input value="' + (t.nomor || '') + '" readonly></div><div class="form-group"><label>Tipe</label><input value="' + (labels[t.tipe] || t.tipe || '') + '" readonly></div><div class="form-group"><label>Pasien</label><input value="' + (t.pasienNama || '-') + '" readonly></div><div class="form-group"><label>Tanggal</label><input value="' + fmtDate(t.tanggal) + '" readonly></div><div class="form-group"><label>Shift</label><input value="' + (t.shift || '-') + '" readonly></div><div class="form-group"><label>Total</label><input value="Rp ' + fmt(t.totalAkhir) + '" readonly style="color:var(--accent);font-weight:700"></div></div></div>';
+    if (t.items && t.items.length) { h += '<h4 style="margin:16px 0 10px;font-size:13px;font-weight:700;color:var(--muted)">Item Obat</h4><div class="table-wrap"><table><thead><tr><th>Nama</th><th class="num">HPP</th><th class="num">Jual</th><th>Qty</th><th>Racik</th><th class="num">Subtotal</th></tr></thead><tbody>'; for (var i = 0; i < t.items.length; i++) { var it = t.items[i]; h += '<tr><td>' + (it.nama || '-') + '</td><td class="num">' + fmt(it.hpp) + '</td><td class="num">' + fmt(it.hargaJual) + '</td><td>' + it.qty + '</td><td>' + (it.racik ? 'Ya' : '-') + '</td><td class="num">' + fmt(it.subtotal) + '</td></tr>'; } h += '</tbody></table></div>'; }
+    if (t.rawatJalanNomor) { h += '<p style="margin-top:16px;font-size:13px;color:var(--purple)"><i class="fas fa-stethoscope"></i> Rawat Jalan: ' + t.rawatJalanNomor + ' (Rp ' + fmt(t.rawatJalanTotal || 0) + ')</p>'; }
+    h += '<div style="margin-top:20px"><button class="btn btn-outline btn-sm" onclick="Trx.closeDetail()" style="width:auto"><i class="fas fa-arrow-left"></i> Kembali ke Riwayat</button></div>';
+    var riwayatEl = document.querySelector('.trx-riwayat'); if (riwayatEl) riwayatEl.innerHTML = h;
   }
 
   function closeDetail() {
-    var riwayatEl = document.querySelector('.trx-riwayat');
-    if (riwayatEl) {
-      riwayatEl.innerHTML = '<div class="section-title"><i class="fas fa-history"></i> Riwayat Terakhir</div><div class="table-wrap"><div style="overflow-x:auto"><table><thead><tr><th>No</th><th>Nomor</th><th>Tipe</th><th>Pasien</th><th class="num">Total</th><th>Tanggal</th><th>Aksi</th></tr></thead><tbody id="trxHistBody"></tbody></table></div></div>';
-      renderHist();
-    }
+    var riwayatEl = document.querySelector('.trx-riwayat'); if (riwayatEl) { riwayatEl.innerHTML = '<div class="section-title"><i class="fas fa-history"></i> Riwayat Terakhir</div><div class="table-wrap"><div style="overflow-x:auto"><table><thead><tr><th>No</th><th>Nomor</th><th>Tipe</th><th>Pasien</th><th class="num">Total</th><th>Tanggal</th><th>Aksi</th></tr></thead><tbody id="trxHistBody"></tbody></table></div></div>'; renderHist(); }
   }
 
-  // ================================================================
-  //  EDIT TRANSAKSI
-  // ================================================================
   function editTrx(id) {
-    var t = null;
-    for (var i = 0; i < trxHistory.length; i++) { if (trxHistory[i].id === id) { t = trxHistory[i]; break; } }
-    if (!t) { toast('Data tidak ditemukan', 'error'); return; }
-
-    editTrxId = id;
-    trxTipe = t.tipe;
-    trxPasienId = t.pasienId || null;
-    trxPasienNama = t.pasienNama || '';
-
-    var allBtns = document.querySelectorAll('.trx-type-btn');
-    for (var i = 0; i < allBtns.length; i++) {
-      allBtns[i].classList.remove('active');
-      if (allBtns[i].dataset.tipe === trxTipe) allBtns[i].classList.add('active');
-    }
-
+    var t = null; for (var i = 0; i < trxHistory.length; i++) { if (trxHistory[i].id === id) { t = trxHistory[i]; break; } } if (!t) { toast('Data tidak ditemukan', 'error'); return; }
+    editTrxId = id; trxTipe = t.tipe; trxPasienId = t.pasienId || null; trxPasienNama = t.pasienNama || '';
+    var allBtns = document.querySelectorAll('.trx-type-btn'); for (var i = 0; i < allBtns.length; i++) { allBtns[i].classList.remove('active'); if (allBtns[i].dataset.tipe === trxTipe) allBtns[i].classList.add('active'); }
     trxItems = [];
-    if (t.items) {
-      for (var i = 0; i < t.items.length; i++) {
-        var it = t.items[i];
-        var obatData = null;
-        for (var j = 0; j < trxObatList.length; j++) {
-          if (trxObatList[j].id === it.obatId) { obatData = trxObatList[j]; break; }
-        }
-        trxItems.push({
-          obatId: it.obatId, nama: it.nama, merek: obatData ? (obatData.namaMerek || '') : '',
-          sediaan: obatData ? obatData.sediaan : '', kekuatan: obatData ? obatData.kekuatan : '',
-          satuan: obatData ? obatData.satuan : '', hpp: it.hpp, hargaJual: it.hargaJual,
-          qty: it.qty, racik: it.racik || false, stock: obatData ? (obatData.stock || 0) : 0
-        });
-      }
-    }
-
-    if (t.tipe === 'tindakan_apotek' && t.tindakanApotek) {
-      trxTindApotek = { gula: !!t.tindakanApotek.gula, asam: !!t.tindakanApotek.asam, kolestrol: !!t.tindakanApotek.kolestrol, tensi: !!t.tindakanApotek.tensi };
-    } else {
-      trxTindApotek = { gula: false, asam: false, kolestrol: false, tensi: false };
-    }
-
-    trxRawatId = t.rawatJalanId || null;
-    trxRawatData = t.rawatJalanNomor ? { nomor: t.rawatJalanNomor, totalTindakan: t.rawatJalanTotal || 0, pasienId: t.pasienId, pasienNama: t.pasienNama } : null;
-
-    var psEl = document.getElementById('trxPsSearch');
-    if (psEl) psEl.value = trxPasienNama;
-    var psInfo = document.getElementById('trxPsInfo');
-    if (psInfo && trxPasienNama) {
-      psInfo.style.display = 'block';
-      psInfo.innerHTML = '<i class="fas fa-user-check" style="color:var(--accent)"></i> ' + trxPasienNama;
-    }
-
-    updateUI();
-    renderItems();
-    renderSummary();
-
-    document.getElementById('trxTypes').scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-    var saveBtn = document.getElementById('trxSave');
-    saveBtn.innerHTML = '<i class="fas fa-save"></i> Update Transaksi';
-    saveBtn.style.background = 'var(--info)';
-    saveBtn.style.color = '#fff';
-
+    if (t.items) { for (var i = 0; i < t.items.length; i++) { var it = t.items[i]; var obatData = (window._obatList||[]).find(o => o.id === it.obatId); trxItems.push({ obatId: it.obatId, nama: it.nama, merek: obatData ? (obatData.namaMerek || '') : '', sediaan: obatData ? obatData.sediaan : '', kekuatan: obatData ? obatData.kekuatan : '', satuan: obatData ? obatData.satuan : '', hpp: it.hpp, hargaJual: it.hargaJual, qty: it.qty, racik: it.racik || false, stock: obatData ? (obatData.stock || 0) : 0 }); } }
+    if (t.tipe === 'tindakan_apotek' && t.tindakanApotek) { trxTindApotek = { gula: !!t.tindakanApotek.gula, asam: !!t.tindakanApotek.asam, kolestrol: !!t.tindakanApotek.kolestrol, tensi: !!t.tindakanApotek.tensi }; } else { trxTindApotek = { gula: false, asam: false, kolestrol: false, tensi: false }; }
+    trxRawatId = t.rawatJalanId || null; trxRawatData = t.rawatJalanNomor ? { nomor: t.rawatJalanNomor, totalTindakan: t.rawatJalanTotal || 0, pasienId: t.pasienId, pasienNama: t.pasienNama } : null;
+    var psEl = document.getElementById('trxPsSearch'); if (psEl) psEl.value = trxPasienNama;
+    var psInfo = document.getElementById('trxPsInfo'); if (psInfo && trxPasienNama) { psInfo.style.display = 'block'; psInfo.innerHTML = '<i class="fas fa-user-check" style="color:var(--accent)"></i> ' + trxPasienNama; }
+    updateUI(); renderItems(); renderSummary(); document.getElementById('trxTypes').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    var saveBtn = document.getElementById('trxSave'); saveBtn.innerHTML = '<i class="fas fa-save"></i> Update Transaksi'; saveBtn.style.background = 'var(--info)'; saveBtn.style.color = '#fff';
     toast('Mode edit — ubah data lalu klik Update', 'info');
   }
 
-  // ================================================================
-  //  DELETE TRANSAKSI
-  // ================================================================
   function deleteTrx(id, nomor) {
     if (!confirm('Hapus transaksi "' + nomor + '"?\n\nStok obat akan dikembalikan.\nRawat jalan (jika ada) akan dikembalikan ke status Menunggu Obat.')) return;
-
-    var t = null;
-    for (var i = 0; i < trxHistory.length; i++) { if (trxHistory[i].id === id) { t = trxHistory[i]; break; } }
-    if (!t) { toast('Data tidak ditemukan', 'error'); return; }
-
-    var btn = document.querySelector('.trx-riwayat button[onclick*="deleteTrx(\'' + id + '\')"]');
-    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
-
+    var t = null; for (var i = 0; i < trxHistory.length; i++) { if (trxHistory[i].id === id) { t = trxHistory[i]; break; } } if (!t) { toast('Data tidak ditemukan', 'error'); return; }
     db.collection('transaksi').doc(id).get().then(function(doc) {
       if (!doc.exists) { toast('Data sudah dihapus', 'warning'); return; }
-      var data = doc.data();
-      var batch = db.batch();
-
-      batch.delete(db.collection('transaksi').doc(id));
-
-      if (data.items) {
-        for (var i = 0; i < data.items.length; i++) {
-          var it = data.items[i];
-          if (it.obatId) {
-            batch.update(db.collection('obat').doc(it.obatId), { stock: firebase.firestore.FieldValue.increment(it.qty) });
-            batch.set(db.collection('stock_mutasi').doc(), {
-              obatId: it.obatId, tipe: 'masuk', jumlah: it.qty,
-              stockSebelum: (it.stock || 0), stockSesudah: (it.stock || 0) + it.qty,
-              keterangan: 'Pembatalan ' + nomor, tanggal: now(),
-              userId: currentUser ? currentUser.email : '', referensi: nomor
-            });
-          }
-        }
-      }
-
-      if (data.rawatJalanId) {
-        batch.update(db.collection('rawat_jalan').doc(data.rawatJalanId), {
-          status: 'menunggu_obat', transaksiId: firebase.firestore.FieldValue.delete(), transaksiNomor: firebase.firestore.FieldValue.delete()
-        });
-      }
-
+      var data = doc.data(); var batch = db.batch(); batch.delete(db.collection('transaksi').doc(id));
+      if (data.items) { for (var i = 0; i < data.items.length; i++) { var it = data.items[i]; if (it.obatId) { batch.update(db.collection('obat').doc(it.obatId), { stock: firebase.firestore.FieldValue.increment(it.qty) }); batch.set(db.collection('stock_mutasi').doc(), { obatId: it.obatId, tipe: 'masuk', jumlah: it.qty, stockSebelum: (it.stock || 0), stockSesudah: (it.stock || 0) + it.qty, keterangan: 'Pembatalan ' + nomor, tanggal: now(), userId: currentUser ? currentUser.email : '', referensi: nomor }); } } }
+      if (data.rawatJalanId) { batch.update(db.collection('rawat_jalan').doc(data.rawatJalanId), { status: 'menunggu_obat', transaksiId: firebase.firestore.FieldValue.delete(), transaksiNomor: firebase.firestore.FieldValue.delete() }); }
       return batch.commit();
-    }).then(function() {
-      toast('Transaksi "' + nomor + '" dihapus', 'success');
-      loadHist();
-    }).catch(function(e) {
-      toast('Gagal menghapus: ' + e.message, 'error');
-      var btn2 = document.querySelector('.trx-riwayat button[onclick*="deleteTrx(\'' + id + '\')"]');
-      if (btn2) { btn2.disabled = false; btn2.innerHTML = '<i class="fas fa-trash"></i>'; }
-    });
+    }).then(function() { toast('Transaksi "' + nomor + '" dihapus', 'success'); loadHist(); }).catch(function(e) { toast('Gagal menghapus: ' + e.message, 'error'); });
   }
 
-  // ================================================================
-  //  LOAD & RENDER RIWAYAT
-  // ================================================================
   function loadHist() {
     db.collection('transaksi').orderBy('tanggal', 'desc').limit(30).get().then(function(snap) {
-      trxHistory = [];
-      snap.docs.forEach(function(d) { var o = { id: d.id }; var data = d.data(); var keys = Object.keys(data); for (var i = 0; i < keys.length; i++) o[keys[i]] = data[keys[i]]; trxHistory.push(o); });
-      renderHist();
+      trxHistory = snap.docs.map(d => ({ id: d.id, ...d.data() })); renderHist();
     }).catch(function(e) { console.error('Load hist error:', e); });
   }
 
   function renderHist() {
-    var tb = document.getElementById('trxHistBody');
-    if (!tb) return;
+    var tb = document.getElementById('trxHistBody'); if (!tb) return;
     var labels = { resep_klinik: 'Resep Klinik', resep_luar: 'Resep Luar', obat_bebas: 'Obat Bebas', tindakan_apotek: 'Tindakan Apotek' };
     if (!trxHistory.length) { tb.innerHTML = '<tr><td colspan="8"><div class="empty-state"><i class="fas fa-history"></i><p>Belum ada transaksi</p></div></td></tr>'; return; }
     var h = '';
@@ -635,22 +386,9 @@ registerModule('transaksi', function() {
     tb.innerHTML = h;
   }
 
-  // Expose ke global
-  window.Trx = { detailTrx: detailTrx, closeDetail: closeDetail, editTrx: editTrx, deleteTrx: deleteTrx };
-
-  // ================================================================
-  //  LISTENERS OBAT & PASIEN (untuk dropdown)
-  // ================================================================
-  db.collection('obat').onSnapshot(function(snap) {
-    trxObatList = [];
-    snap.docs.forEach(function(d) { var o = { id: d.id }; var data = d.data(); var keys = Object.keys(data); for (var i = 0; i < keys.length; i++) o[keys[i]] = data[keys[i]]; trxObatList.push(o); });
-  }, function(err) { console.error('Trx obat listener:', err); });
-
-  db.collection('pasien').onSnapshot(function(snap) {
-    trxPasienList = [];
-    snap.docs.forEach(function(d) { var o = { id: d.id }; var data = d.data(); var keys = Object.keys(data); for (var i = 0; i < keys.length; i++) o[keys[i]] = data[keys[i]]; trxPasienList.push(o); });
-  }, function(err) { console.error('Trx pasien listener:', err); });
+  window.Trx = { detailTrx, closeDetail, editTrx, deleteTrx };
 
   var obs = new MutationObserver(function() { if (page.classList.contains('active')) render(); });
   obs.observe(page, { attributes: true, attributeFilter: ['class'] });
+  render();
 });
