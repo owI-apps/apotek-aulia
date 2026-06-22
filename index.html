@@ -3,11 +3,28 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-  <meta name="theme-color" content="#080E1A">
+  <meta name="theme-color" content="#10B981">
+  
+  <!-- iOS PWA Support -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Apotek Aulia">
+  <link rel="apple-touch-icon" href="icon-192x192.png">
+
   <title>Apotek Aulia</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%2310B981'/%3E%3Crect x='38' y='15' width='24' height='70' rx='4' fill='white'/%3E%3Crect x='15' y='38' width='70' height='24' rx='4' fill='white'/%3E%3C/svg%3E">
+  <link rel="icon" type="image/png" href="icon-192x192.png">
+  
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Local Styles -->
   <link rel="stylesheet" href="style.css">
+
+  <!-- Firebase & Libraries -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
@@ -20,7 +37,7 @@
   <div id="loginScreen">
     <div class="login-box">
       <div class="login-card">
-       <div class="s-logo"><img src="logo.png" alt="Logo" style="width:100%;height:100%;object-fit:contain;border-radius:10px"></div>
+        <div class="s-logo"><img src="logo.png" alt="Logo" style="width:100%;height:100%;object-fit:contain;border-radius:10px"></div>
         <h1 id="loginTitle">Apotek Aulia</h1>
         <p>Sistem Manajemen Apotek & Klinik</p>
         <div class="login-error" id="loginError"></div>
@@ -36,11 +53,12 @@
     <div id="sidebarOverlay"></div>
     <aside id="sidebar">
       <div class="sidebar-head">
-  <div class="s-logo"><img src="logo.png" alt="Logo" style="width:100%;height:100%;object-fit:contain;border-radius:10px"></div>
-  <div class="s-info"><h2 id="sidebarNama">Apotek Aulia</h2><span>Sistem Manajemen</span></div>
-</div>
+        <div class="s-logo"><img src="logo.png" alt="Logo" style="width:100%;height:100%;object-fit:contain;border-radius:10px"></div>
+        <div class="s-info"><h2 id="sidebarNama">Apotek Aulia</h2><span>Sistem Manajemen</span></div>
+      </div>
       <nav class="sidebar-nav" id="sidebarNav">
-        <div class="nav-section"><div class="nav-section-title">Utama</div>
+        <div class="nav-section">
+          <div class="nav-section-title">Utama</div>
           <div class="nav-item active" data-page="dashboard" data-roles="klinik,apotek,admin"><i class="fas fa-chart-line"></i> Dashboard</div>
         </div>
         <div class="nav-section" data-roles="klinik">
@@ -59,6 +77,7 @@
           <div class="nav-section-title">Keuangan</div>
           <div class="nav-item" data-page="hutang" data-roles="apotek,admin"><i class="fas fa-file-invoice-dollar"></i> Hutang Usaha</div>
           <div class="nav-item" data-page="piutang" data-roles="apotek,admin"><i class="fas fa-hand-holding-usd"></i> Piutang Karyawan</div>
+          <div class="nav-item" data-page="pengeluaran" data-roles="apotek,admin"><i class="fas fa-money-bill-wave"></i> Pengeluaran</div>
         </div>
         <div class="nav-section" data-roles="admin">
           <div class="nav-section-title">Manajemen</div>
@@ -68,20 +87,21 @@
           <div class="nav-item" data-page="pengaturan" data-roles="admin"><i class="fas fa-cog"></i> Pengaturan</div>
         </div>
       </nav>
-    <div class="sidebar-foot">
-      <div class="avatar" id="sidebarAvatar">A</div>
-      <div class="u-info"><div class="u-name" id="sidebarUser">Admin</div><div class="u-role" id="sidebarRole">Administrator</div></div>
-      <button class="logout-btn" id="logoutBtn" title="Keluar"><i class="fas fa-sign-out-alt"></i> <span>Keluar</span></button>
-    </div>
+      <div class="sidebar-foot">
+        <div class="avatar" id="sidebarAvatar">A</div>
+        <div class="u-info"><div class="u-name" id="sidebarUser">Admin</div><div class="u-role" id="sidebarRole">Administrator</div></div>
+        <button class="logout-btn" id="logoutBtn" title="Keluar"><i class="fas fa-sign-out-alt"></i> <span>Keluar</span></button>
+      </div>
     </aside>
+    
     <main id="mainContent">
       <header id="topBar">
         <button id="menuToggle"><i class="fas fa-bars"></i></button>
         <h1 id="pageTitle">Dashboard</h1>
         <div class="topbar-right">
-        <button class="theme-toggle" id="themeToggle" title="Ganti Tema"><i class="fas fa-moon"></i></button>
-        <div class="role-badge" id="roleBadge"></div>
-        <div class="conn-badge online" id="connBadge"><span class="dot"></span><span id="connText">Online</span></div>
+          <button class="theme-toggle" id="themeToggle" title="Ganti Tema"><i class="fas fa-moon"></i></button>
+          <div class="role-badge" id="roleBadge"></div>
+          <div class="conn-badge online" id="connBadge"><span class="dot"></span><span id="connText">Online</span></div>
         </div>
       </header>
       <div class="page-content">
@@ -94,6 +114,9 @@
         <div id="page-stock-opname" class="page"></div>
         <div id="page-hutang" class="page"></div>
         <div id="page-piutang" class="page"></div>
+        <!-- HALAMAN BARU: PENGELUARAN -->
+        <div id="page-pengeluaran" class="page"></div>
+        
         <div id="page-karyawan" class="page"></div>
         <div id="page-payroll" class="page"></div>
         <div id="page-laporan" class="page"></div>
@@ -104,68 +127,80 @@
 
   <!-- MODAL BERSAMA: PASIEN -->
   <div class="modal-overlay" id="modalPasien">
-    <div class="modal"><div class="modal-head"><h3 id="modalPsTitle">Tambah Pasien</h3><button class="modal-close" onclick="closeModal('modalPasien')"><i class="fas fa-times"></i></button></div>
-    <div class="modal-body"><input type="hidden" id="psEditId">
-      <div class="form-grid">
-        <div class="form-group"><label>No. RM (auto)</label><input type="text" id="psNoRM" readonly style="opacity:.6"></div>
-        <div class="form-group"><label>Nama Lengkap *</label><input type="text" id="psNama" placeholder="Nama pasien"></div>
-        <div class="form-group"><label>No. KTP / NIK</label><input type="text" id="psNIK" placeholder="16 digit" maxlength="16"></div>
-        <div class="form-group"><label>Tanggal Lahir</label><input type="date" id="psLahir"></div>
-        <div class="form-group"><label>Jenis Kelamin</label><select id="psJK"><option value="">Pilih</option><option>Laki-laki</option><option>Perempuan</option></select></div>
-        <div class="form-group"><label>No. Telepon</label><input type="text" id="psTelp" placeholder="08xxx"></div>
-        <div class="form-group full"><label>Alamat</label><input type="text" id="psAlamat" placeholder="Alamat"></div>
-        <div class="form-group full"><label>Alergi Obat (pisahkan koma)</label><input type="text" id="psAlergi" placeholder="Amoxicillin, Sulfonamide"></div>
-        <div class="form-group full"><label>Catatan</label><textarea id="psCatatan" rows="2" placeholder="Catatan khusus" style="resize:vertical"></textarea></div>
+    <div class="modal">
+      <div class="modal-head"><h3 id="modalPsTitle">Tambah Pasien</h3><button class="modal-close" onclick="closeModal('modalPasien')"><i class="fas fa-times"></i></button></div>
+      <div class="modal-body"><input type="hidden" id="psEditId">
+        <div class="form-grid">
+          <div class="form-group"><label>No. RM (auto)</label><input type="text" id="psNoRM" readonly style="opacity:.6"></div>
+          <div class="form-group"><label>Nama Lengkap *</label><input type="text" id="psNama" placeholder="Nama pasien"></div>
+          <div class="form-group"><label>No. KTP / NIK</label><input type="text" id="psNIK" placeholder="16 digit" maxlength="16"></div>
+          <div class="form-group"><label>Tanggal Lahir</label><input type="date" id="psLahir"></div>
+          <div class="form-group"><label>Jenis Kelamin</label><select id="psJK"><option value="">Pilih</option><option>Laki-laki</option><option>Perempuan</option></select></div>
+          <div class="form-group"><label>No. Telepon</label><input type="text" id="psTelp" placeholder="08xxx"></div>
+          <div class="form-group full"><label>Alamat</label><input type="text" id="psAlamat" placeholder="Alamat"></div>
+          <div class="form-group full"><label>Alergi Obat (pisahkan koma)</label><input type="text" id="psAlergi" placeholder="Amoxicillin, Sulfonamide"></div>
+          <div class="form-group full"><label>Catatan</label><textarea id="psCatatan" rows="2" placeholder="Catatan khusus" style="resize:vertical"></textarea></div>
+        </div>
       </div>
+      <div class="modal-foot"><button class="btn btn-outline btn-sm" onclick="closeModal('modalPasien')">Batal</button><button class="btn btn-primary btn-sm" id="psBtnSave" style="width:auto;min-width:120px"><i class="fas fa-save"></i> Simpan</button></div>
     </div>
-    <div class="modal-foot"><button class="btn btn-outline btn-sm" onclick="closeModal('modalPasien')">Batal</button><button class="btn btn-primary btn-sm" id="psBtnSave" style="width:auto;min-width:120px"><i class="fas fa-save"></i> Simpan</button></div></div>
   </div>
 
   <!-- MODAL BERSAMA: OBAT -->
   <div class="modal-overlay" id="modalObat">
-    <div class="modal"><div class="modal-head"><h3 id="modalObatTitle">Tambah Obat</h3><button class="modal-close" onclick="closeModal('modalObat')"><i class="fas fa-times"></i></button></div>
-    <div class="modal-body"><input type="hidden" id="obEditId">
-      <div class="form-grid">
-        <div class="form-group"><label>Kode Obat *</label><input type="text" id="obKode" placeholder="OB-001"></div>
-        <div class="form-group"><label>Kategori</label><select id="obKategori"><option value="">Pilih</option><option>Analgesik-Antipiretik</option><option>Antibiotik</option><option>Antihistamin</option><option>Antasida-Gastrointestinal</option><option>Antidiabetik</option><option>Antihipertensi</option><option>Kortikosteroid</option><option>Vitamin-Suplemen</option><option>Batuk-Pilek</option><option>Antialergi</option><option>Antijamur</option><option>Antiinflamasi</option><option>Steril-Antiseptik</option><option>Obat Topikal</option><option>Herbal</option><option>Lainnya</option></select></div>
-        <div class="form-group"><label>Nama Generik *</label><input type="text" id="obGenerik" placeholder="Paracetamol"></div>
-        <div class="form-group"><label>Nama Merek</label><input type="text" id="obMerek" placeholder="Panadol"></div>
-        <div class="form-group"><label>Sediaan</label><select id="obSediaan"><option value="">Pilih</option><option>Tablet</option><option>Kapsul</option><option>Sirup</option><option>Injeksi</option><option>Salep</option><option>Krim</option><option>Drops</option><option>Suspensi</option><option>Puyer</option><option>Lainnya</option></select></div>
-        <div class="form-group"><label>Kekuatan</label><input type="text" id="obKekuatan" placeholder="500mg"></div>
-        <div class="form-group"><label>Satuan</label><select id="obSatuan"><option value="">Pilih</option><option>butir</option><option>kapsul</option><option>botol</option><option>tube</option><option>vial</option><option>strip</option><option>sachet</option><option>ml</option></select></div>
-        <div class="form-group"><label>HPP / Harga Beli (Rp) *</label><input type="number" id="obHPP" min="0"></div>
-        <div class="form-group"><label>Harga Jual Umum (Rp) *</label><input type="number" id="obHargaJual" min="0"></div>
-        <div class="form-group"><label>Stok Awal</label><input type="number" id="obStok" min="0" value="0"></div>
-        <div class="form-group"><label>Min Stok (alert)</label><input type="number" id="obMinStok" min="0" value="100"></div>
+    <div class="modal">
+      <div class="modal-head"><h3 id="modalObatTitle">Tambah Obat</h3><button class="modal-close" onclick="closeModal('modalObat')"><i class="fas fa-times"></i></button></div>
+      <div class="modal-body"><input type="hidden" id="obEditId">
+        <div class="form-grid">
+          <div class="form-group"><label>Kode Obat *</label><input type="text" id="obKode" placeholder="OB-001"></div>
+          <div class="form-group"><label>Kategori</label><select id="obKategori"><option value="">Pilih</option><option>Analgesik-Antipiretik</option><option>Antibiotik</option><option>Antihistamin</option><option>Antasida-Gastrointestinal</option><option>Antidiabetik</option><option>Antihipertensi</option><option>Kortikosteroid</option><option>Vitamin-Suplemen</option><option>Batuk-Pilek</option><option>Antialergi</option><option>Antijamur</option><option>Antiinflamasi</option><option>Steril-Antiseptik</option><option>Obat Topikal</option><option>Herbal</option><option>Lainnya</option></select></div>
+          <div class="form-group"><label>Nama Generik *</label><input type="text" id="obGenerik" placeholder="Paracetamol"></div>
+          <div class="form-group"><label>Nama Merek</label><input type="text" id="obMerek" placeholder="Panadol"></div>
+          <div class="form-group"><label>Sediaan</label><select id="obSediaan"><option value="">Pilih</option><option>Tablet</option><option>Kapsul</option><option>Sirup</option><option>Injeksi</option><option>Salep</option><option>Krim</option><option>Drops</option><option>Suspensi</option><option>Puyer</option><option>Lainnya</option></select></div>
+          <div class="form-group"><label>Kekuatan</label><input type="text" id="obKekuatan" placeholder="500mg"></div>
+          <div class="form-group"><label>Satuan</label><select id="obSatuan"><option value="">Pilih</option><option>butir</option><option>kapsul</option><option>botol</option><option>tube</option><option>vial</option><option>strip</option><option>sachet</option><option>ml</option></select></div>
+          <div class="form-group"><label>HPP / Harga Beli (Rp) *</label><input type="number" id="obHPP" min="0"></div>
+          <div class="form-group"><label>Harga Jual Umum (Rp) *</label><input type="number" id="obHargaJual" min="0"></div>
+          <div class="form-group"><label>Stok Awal</label><input type="number" id="obStok" min="0" value="0"></div>
+          <div class="form-group"><label>Min Stok (alert)</label><input type="number" id="obMinStok" min="0" value="100"></div>
+        </div>
       </div>
+      <div class="modal-foot"><button class="btn btn-outline btn-sm" onclick="closeModal('modalObat')">Batal</button><button class="btn btn-primary btn-sm" id="obBtnSave" style="width:auto;min-width:120px"><i class="fas fa-save"></i> Simpan</button></div>
     </div>
-    <div class="modal-foot"><button class="btn btn-outline btn-sm" onclick="closeModal('modalObat')">Batal</button><button class="btn btn-primary btn-sm" id="obBtnSave" style="width:auto;min-width:120px"><i class="fas fa-save"></i> Simpan</button></div></div>
   </div>
 
   <!-- MODAL BERSAMA: ADJUST STOK -->
   <div class="modal-overlay" id="modalStok">
-    <div class="modal" style="max-width:400px"><div class="modal-head"><h3 id="modalStokTitle">Adjust Stok</h3><button class="modal-close" onclick="closeModal('modalStok')"><i class="fas fa-times"></i></button></div>
-    <div class="modal-body"><input type="hidden" id="stokObatId">
-      <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Obat: <strong id="stokObatNama" style="color:var(--fg)"></strong> — Stok: <strong id="stokObatJumlah" style="color:var(--accent)"></strong></p>
-      <div class="form-group"><label>Jumlah</label><input type="number" id="stokJumlah" min="1"></div>
-      <div class="form-group"><label>Keterangan</label><select id="stokKeterangan"><option>Pembelian dari supplier</option><option>Retur dari pasien</option><option>Koreksi stok (+)</option><option>Penjualan ke pasien</option><option>Stock opname (selisih negatif)</option><option>Koreksi stok (-)</option><option>Pemusnahan expired</option><option>Lainnya</option></select></div>
+    <div class="modal" style="max-width:400px">
+      <div class="modal-head"><h3 id="modalStokTitle">Adjust Stok</h3><button class="modal-close" onclick="closeModal('modalStok')"><i class="fas fa-times"></i></button></div>
+      <div class="modal-body"><input type="hidden" id="stokObatId">
+        <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Obat: <strong id="stokObatNama" style="color:var(--fg)"></strong> — Stok: <strong id="stokObatJumlah" style="color:var(--accent)"></strong></p>
+        <div class="form-group"><label>Jumlah</label><input type="number" id="stokJumlah" min="1"></div>
+        <div class="form-group"><label>Keterangan</label><select id="stokKeterangan"><option>Pembelian dari supplier</option><option>Retur dari pasien</option><option>Koreksi stok (+)</option><option>Penjualan ke pasien</option><option>Stock opname (selisih negatif)</option><option>Koreksi stok (-)</option><option>Pemusnahan expired</option><option>Lainnya</option></select></div>
+      </div>
+      <div class="modal-foot"><button class="btn btn-outline btn-sm" onclick="closeModal('modalStok')">Batal</button><button class="btn btn-primary btn-sm" id="stokBtnSave" style="width:auto;min-width:120px"><i class="fas fa-check"></i> Proses</button></div>
     </div>
-    <div class="modal-foot"><button class="btn btn-outline btn-sm" onclick="closeModal('modalStok')">Batal</button><button class="btn btn-primary btn-sm" id="stokBtnSave" style="width:auto;min-width:120px"><i class="fas fa-check"></i> Proses</button></div></div>
   </div>
 
   <!-- MODAL BERSAMA: IMPORT EXCEL -->
   <div class="modal-overlay" id="modalImport">
-    <div class="modal" style="max-width:750px"><div class="modal-head"><h3>Import Excel</h3><button class="modal-close" onclick="closeModal('modalImport')"><i class="fas fa-times"></i></button></div>
-    <div class="modal-body">
-      <p style="font-size:12px;color:var(--muted);margin-bottom:8px">Kolom wajib: <code style="color:var(--accent)">kodeObat</code>, <code style="color:var(--accent)">namaGenerik</code>, <code style="color:var(--accent)">hargaBeli</code>, <code style="color:var(--accent)">hargaJual</code>, <code style="color:var(--accent)">stock</code></p>
-      <button class="btn btn-outline btn-xs" id="btnDownloadTemplate" style="width:auto;margin-bottom:12px"><i class="fas fa-file-download"></i> Download Template</button>
-      <div class="import-zone" id="importZone"><i class="fas fa-cloud-upload-alt"></i><p>Klik atau drag file Excel</p><input type="file" id="importFile" accept=".xlsx,.xls" style="display:none"></div>
-      <div id="importPreviewWrap" style="display:none"><p style="font-size:13px;font-weight:600;margin-bottom:8px">Preview: <span id="importCount">0</span> baris</p><div class="import-preview" id="importPreview"></div><div id="importResult"></div></div>
+    <div class="modal" style="max-width:750px">
+      <div class="modal-head"><h3>Import Excel</h3><button class="modal-close" onclick="closeModal('modalImport')"><i class="fas fa-times"></i></button></div>
+      <div class="modal-body">
+        <p style="font-size:12px;color:var(--muted);margin-bottom:8px">Kolom wajib: <code style="color:var(--accent)">kodeObat</code>, <code style="color:var(--accent)">namaGenerik</code>, <code style="color:var(--accent)">hargaBeli</code>, <code style="color:var(--accent)">hargaJual</code>, <code style="color:var(--accent)">stock</code></p>
+        <button class="btn btn-outline btn-xs" id="btnDownloadTemplate" style="width:auto;margin-bottom:12px"><i class="fas fa-file-download"></i> Download Template</button>
+        <div class="import-zone" id="importZone"><i class="fas fa-cloud-upload-alt"></i><p>Klik atau drag file Excel</p><input type="file" id="importFile" accept=".xlsx,.xls" style="display:none"></div>
+        <div id="importPreviewWrap" style="display:none">
+          <p style="font-size:13px;font-weight:600;margin-bottom:8px">Preview: <span id="importCount">0</span> baris</p>
+          <div class="import-preview" id="importPreview"></div>
+          <div id="importResult"></div>
+        </div>
+      </div>
+      <div class="modal-foot"><button class="btn btn-outline btn-sm" onclick="closeModal('modalImport')">Tutup</button><button class="btn btn-primary btn-sm" id="btnDoImport" style="width:auto;min-width:140px;display:none"><i class="fas fa-upload"></i> Import</button></div>
     </div>
-    <div class="modal-foot"><button class="btn btn-outline btn-sm" onclick="closeModal('modalImport')">Tutup</button><button class="btn btn-primary btn-sm" id="btnDoImport" style="width:auto;min-width:140px;display:none"><i class="fas fa-upload"></i> Import</button></div></div>
   </div>
 
-  <!-- LOAD SCRIPTS -->
+  <!-- LOAD SCRIPTS (URUTAN PENTING) -->
   <script src="app.js"></script>
   <script src="mod-dashboard.js"></script>
   <script src="mod-rawat.js"></script>
@@ -178,5 +213,7 @@
   <script src="mod-payroll.js"></script>
   <script src="mod-laporan.js"></script>
   <script src="mod-pengaturan.js"></script>
+  <!-- LOAD FILE BARU PENGELUARAN -->
+  <script src="mod-pengeluaran.js"></script>
 </body>
 </html>
