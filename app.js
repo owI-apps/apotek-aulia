@@ -226,3 +226,42 @@ if ('serviceWorker' in navigator) {
   const sw = `const C='apotek-v4';self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(['/'])))});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==C).map(k=>caches.delete(k)))))});self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).then(res=>{if(res.status===200&&res.type==='basic')caches.open(C).then(c=>c.put(e.request,res.clone()));return res}).catch(()=>caches.match('/'))))});`;
   navigator.serviceWorker.register(URL.createObjectURL(new Blob([sw], { type: 'application/javascript' }))).catch(() => {});
 }
+// ================================================================
+//  THEME TOGGLE (Light/Dark)
+// ================================================================
+(function() {
+  var saved = localStorage.getItem('apotek-theme') || 'light';
+  document.documentElement.setAttribute('data-theme', saved);
+  updateThemeIcon(saved);
+
+  function updateThemeIcon(theme) {
+    var btn = document.getElementById('themeToggle');
+    if (!btn) return;
+    if (theme === 'dark') {
+      btn.innerHTML = '<i class="fas fa-sun"></i>';
+    } else {
+      btn.innerHTML = '<i class="fas fa-moon"></i>';
+    }
+  }
+
+  document.addEventListener('click', function(e) {
+    if (e.target.closest('#themeToggle')) {
+      var current = document.documentElement.getAttribute('data-theme') || 'light';
+      var next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('apotek-theme', next);
+      updateThemeIcon(next);
+    }
+  });
+
+  // Re-apply icon after login (since topbar re-renders)
+  var origApplyRole = typeof applyRole === 'function' ? applyRole : null;
+  if (origApplyRole) {
+    var _origApply = applyRole;
+    window.applyRole = function() {
+      _origApply();
+      var saved2 = localStorage.getItem('apotek-theme') || 'light';
+      updateThemeIcon(saved2);
+    };
+  }
+})();
