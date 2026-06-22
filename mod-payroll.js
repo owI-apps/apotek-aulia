@@ -6,11 +6,13 @@ registerModule('payroll', function() {
   function render() {
     var opts = '';
     for (var i = 0; i < bulanNama.length; i++) opts += '<option value="' + i + '"' + (i === ts().getMonth() ? ' selected' : '') + '>' + bulanNama[i] + '</option>';
+    
     page.innerHTML = '<div class="trx-section"><h4><i class="fas fa-calendar-alt"></i> Pilih Periode</h4><div class="form-grid" style="max-width:300px"><div class="form-group"><label>Bulan</label><select id="prBulan">' + opts + '</select></div><div class="form-group"><label>Tahun</label><input type="number" id="prTahun" value="' + ts().getFullYear() + '" min="2024" max="2099"></div><div class="form-group" style="display:flex;align-items:flex-end"><button class="btn btn-primary btn-sm" id="prBtnHitung" style="width:auto;min-width:160px"><i class="fas fa-calculator"></i> Hitung Payroll</button></div></div></div><div id="prResult"></div>';
+    
     document.getElementById('prBtnHitung').addEventListener('click', hitungPayroll);
   }
 
-  function hitungPayroll() {
+  async function hitungPayroll() {
     var bulan = parseInt(document.getElementById('prBulan').value);
     var tahun = parseInt(document.getElementById('prTahun').value) || ts().getFullYear();
     var start = new Date(tahun, bulan, 1);
@@ -18,30 +20,32 @@ registerModule('payroll', function() {
     var btn = document.getElementById('prBtnHitung');
     btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menghitung...';
 
-    db.collection('transaksi').where('tanggal', '>=', start).where('tanggal', '<', end).get().then(function(snap) {
-      var D = {jmlRK:0,jmlRL:0,jmlOB:0,jmlTA:0, bhTotal:0,jdTotal:0,bagianKlinikTotal:0,tuslahTotal:0,kasResepTotal:0,dokterLuarTotal:0,labaLuarTotal:0,racikItems:0,pembulatan:0,rawatKlinik:0,totalObat:0,totalHPP:0,gulaCount:0,asamCount:0,kolestrolCount:0,tindApotekFee:0,hppApotek:0};
+    try {
+      const trxSnap = await db.collection('transaksi').where('tanggal', '>=', start).where('tanggal', '<', end).get();
+      var D = { jmlRK: 0, jmlRL: 0, jmlOB: 0, jmlTA: 0, bhTotal: 0, jdTotal: 0, bagianKlinikTotal: 0, tuslahTotal: 0, kasResepTotal: 0, dokterLuarTotal: 0, labaLuarTotal: 0, racikItems: 0, pembulatan: 0, rawatKlinik: 0, totalObat: 0, totalHPP: 0, gulaCount: 0, asamCount: 0, kolestrolCount: 0, tindApotekFee: 0, hppApotek: 0 };
 
-      snap.docs.forEach(function(doc) {
+      trxSnap.docs.forEach(function(doc) {
         var t = doc.data(), tipe = t.tipe;
         if (tipe === 'resep_klinik') {
-          D.jmlRK++; D.bhTotal+=C.bhDokter; D.jdTotal+=C.jdDokter; D.bagianKlinikTotal+=C.bagianKlinikResep; D.tuslahTotal+=C.tuslah; D.kasResepTotal+=C.kasResep;
-          D.rawatKlinik+=(t.rawatJalanTotal||0); D.totalObat+=(t.totalObat||0); D.totalHPP+=(t.totalHPP||0);
-          var items = t.items || []; for (var i=0;i<items.length;i++) { if(items[i].racik) D.racikItems+=C.racikPerItem; }
-          D.pembulatan+=(t.pembulatan||0);
+          D.jmlRK++; D.bhTotal += C.bhDokter; D.jdTotal += C.jdDokter; D.bagianKlinikTotal += C.bagianKlinikResep; D.tuslahTotal += C.tuslah; D.kasResepTotal += C.kasResep;
+          D.rawatKlinik += (t.rawatJalanTotal || 0); D.totalObat += (t.totalObat || 0); D.totalHPP += (t.totalHPP || 0);
+          var items = t.items || []; for (var i = 0; i < items.length; i++) { if (items[i].racik) D.racikItems += C.racikPerItem; }
+          D.pembulatan += (t.pembulatan || 0);
         } else if (tipe === 'resep_luar') {
-          D.jmlRL++; D.dokterLuarTotal+=C.dokterLuar; D.labaLuarTotal+=C.labaLuar;
-          D.totalObat+=(t.totalObat||0); D.totalHPP+=(t.totalHPP||0);
-          var items = t.items || []; for (var i=0;i<items.length;i++) { if(items[i].racik) D.racikItems+=C.racikPerItem; }
-          D.pembulatan+=(t.pembulatan||0);
+          D.jmlRL++; D.dokterLuarTotal += C.dokterLuar; D.labaLuarTotal += C.labaLuar;
+          D.totalObat += (t.totalObat || 0); D.totalHPP += (t.totalHPP || 0);
+          var items = t.items || []; for (var i = 0; i < items.length; i++) { if (items[i].racik) D.racikItems += C.racikPerItem; }
+          D.pembulatan += (t.pembulatan || 0);
         } else if (tipe === 'obat_bebas') {
-          D.jmlOB++; D.totalObat+=(t.totalObat||0); D.totalHPP+=(t.totalHPP||0); D.pembulatan+=(t.pembulatan||0);
+          D.jmlOB++; D.totalObat += (t.totalObat || 0); D.totalHPP += (t.totalHPP || 0); D.pembulatan += (t.pembulatan || 0);
         } else if (tipe === 'tindakan_apotek') {
           D.jmlTA++;
           var ta = t.tindakanApotek || {};
-          if (ta.gula) { D.gulaCount++; D.tindApotekFee+=C.gulaTindakan; D.hppApotek+=(C.gulaTotal-C.gulaTindangan); }
-          if (ta.asam) { D.asamCount++; D.tindApotekFee+=C.asamTindangan; D.hppApotek+=(C.asamTotal-C.asamTindangan); }
-          if (ta.kolestrol) { D.kolestrolCount++; D.tindApotekFee+=C.kolestrolTindangan; D.hppApotek+=(C.kolestrolTotal-C.kolestrolTindangan); }
-          D.pembulatan+=(t.pembulatan||0);
+          // Menggunakan variable 'Tindangan' yang udah di fix di app.js
+          if (ta.gula) { D.gulaCount++; D.tindApotekFee += C.gulaTindangan; D.hppApotek += (C.gulaTotal - C.gulaTindangan); }
+          if (ta.asam) { D.asamCount++; D.tindApotekFee += C.asamTindangan; D.hppApotek += (C.asamTotal - C.asamTindangan); }
+          if (ta.kolestrol) { D.kolestrolCount++; D.tindApotekFee += C.kolestrolTindangan; D.hppApotek += (C.kolestrolTotal - C.kolestrolTindangan); }
+          D.pembulatan += (t.pembulatan || 0);
         }
       });
 
@@ -49,25 +53,34 @@ registerModule('payroll', function() {
       var omzet = (C.persenOmzet / 100) * marginTotal;
       var totalDA = D.tuslahTotal + D.racikItems + D.pembulatan + D.tindApotekFee + omzet + D.rawatKlinik;
 
-      return db.collection('karyawan').where('divisi','==','apotek').get();
-    }).then(function(karSnap) {
-      var karyawanApotek = [];
-      karSnap.docs.forEach(function(d) { var o = {id:d.id}; var data = d.data(); var keys = Object.keys(data); for (var i=0;i<keys.length;i++) o[keys[i]]=data[keys[i]]; karyawanApotek.push(o); });
-      var jmlKar = Math.max(karyawanApotek.length, 1);
+      // Fetch karyawan apotek saja
+      const karSnap = await db.collection('karyawan').where('divisi', '==', 'apotek').get();
+      var karyawanApotek = karSnap.docs.map(d => d.data());
+      var jmlKar = Math.max(karyawanApotek.length, 1); // Cegah pembagian dengan nol
 
       payrollRows = [];
       for (var i = 0; i < karyawanApotek.length; i++) {
         var k = karyawanApotek[i];
-        var pTuslah = totalDA * ((k.persenTuslah||0) / 100);
-        var pTindakan = D.tindApotekFee * ((k.persenTindakan||0) / 100);
-        var pMakan = D.pembulatan * ((k.persenTuslah||0) / 100);
+        var pTuslah = totalDA * ((k.persenTuslah || 0) / 100);
+        var pTindakan = D.tindApotekFee * ((k.persenTindakan || 0) / 100);
+        
+        // FIX LOGIKA MAKAN: Dibagi rata ke semua karyawan, bukan berdasarkan persen tuslah
+        var pMakan = D.pembulatan / jmlKar; 
+        
         var pOmzet = omzet / jmlKar;
         var pTransport = C.transportTotal / jmlKar;
-        var gajiTotal = (k.gajiPokok||0) + pTuslah + pTindakan + pMakan + pOmzet + pTransport;
-        payrollRows.push({nama:k.nama,jabatan:k.jabatan,gajiPokok:k.gajiPokok||0,pTuslah:pTuslah,pTindakan:pTindakan,makan:pMakan,omzet:pOmzet,transport:pTransport,total:gajiTotal,thrApotek:totalDA*0.20/jmlKar});
+        var gajiTotal = (k.gajiPokok || 0) + pTuslah + pTindakan + pMakan + pOmzet + pTransport;
+        
+        payrollRows.push({
+          nama: k.nama, jabatan: k.jabatan, gajiPokok: k.gajiPokok || 0,
+          pTuslah: pTuslah, pTindakan: pTindakan, makan: pMakan,
+          omzet: pOmzet, transport: pTransport, total: gajiTotal,
+          thrApotek: totalDA * 0.20 / jmlKar
+        });
       }
 
-      var totalGaji = 0; for (var i=0;i<payrollRows.length;i++) totalGaji+=payrollRows[i].total;
+      var totalGaji = 0; 
+      for (var i = 0; i < payrollRows.length; i++) totalGaji += payrollRows[i].total;
       var thrApotekTotal = totalDA * 0.20;
       var thrKlinik = D.bagianKlinikTotal * 0.10;
       var bulanLabel = bulanNama[bulan];
@@ -104,7 +117,7 @@ registerModule('payroll', function() {
       h += '<div style="margin-top:24px"><div class="section-title"><i class="fas fa-users"></i> Payroll Karyawan Apotek (' + karyawanApotek.length + ')</div><div class="table-wrap"><div style="overflow-x:auto"><table><thead><tr><th>No</th><th>Nama</th><th>Jabatan</th><th class="num">Gaji Pokok</th><th class="num">Tuslah</th><th class="num">Tindakan</th><th class="num">Makan</th><th class="num">Omzet</th><th class="num">Transport</th><th class="num">TOTAL</th></tr></thead><tbody>';
       for (var i = 0; i < payrollRows.length; i++) {
         var k = payrollRows[i];
-        h += '<tr><td>' + (i+1) + '</td><td style="font-weight:500">' + k.nama + '</td><td>' + (k.jabatan||'-') + '</td><td class="num">Rp ' + fmt(k.gajiPokok) + '</td><td class="num">Rp ' + fmt(k.pTuslah) + '</td><td class="num">Rp ' + fmt(k.pTindakan) + '</td><td class="num">Rp ' + fmt(k.makan) + '</td><td class="num">Rp ' + fmt(k.omzet) + '</td><td class="num">Rp ' + fmt(k.transport) + '</td><td class="num" style="font-size:15px;font-weight:800;color:var(--accent)">Rp ' + fmt(k.total) + '</td></tr>';
+        h += '<tr><td>' + (i + 1) + '</td><td style="font-weight:500">' + k.nama + '</td><td>' + (k.jabatan || '-') + '</td><td class="num">Rp ' + fmt(k.gajiPokok) + '</td><td class="num">Rp ' + fmt(k.pTuslah) + '</td><td class="num">Rp ' + fmt(k.pTindakan) + '</td><td class="num">Rp ' + fmt(k.makan) + '</td><td class="num">Rp ' + fmt(k.omzet) + '</td><td class="num">Rp ' + fmt(k.transport) + '</td><td class="num" style="font-size:15px;font-weight:800;color:var(--accent)">Rp ' + fmt(k.total) + '</td></tr>';
       }
       h += '<tr style="background:rgba(16,185,129,.06)"><td colspan="9" style="font-weight:800;text-align:right">TOTAL PAYROLL</td><td class="num" style="font-size:18px;font-weight:800;color:var(--accent)">Rp ' + fmt(totalGaji) + '</td></tr>';
       h += '</tbody></table></div></div>';
@@ -112,31 +125,33 @@ registerModule('payroll', function() {
       h += '<div class="stats-grid" style="margin-top:24px"><div class="stat-card"><div class="s-label">Total Gaji</div><div class="s-value green">Rp ' + fmt(totalGaji) + '</div></div><div class="stat-card"><div class="s-label">THR Apotek (20%)</div><div class="s-value purple">Rp ' + fmt(thrApotekTotal) + '</div></div><div class="stat-card"><div class="s-label">THR Klinik (10%)</div><div class="s-value yellow">Rp ' + fmt(thrKlinik) + '</div></div><div class="stat-card"><div class="s-label">Transport</div><div class="s-value blue">Rp ' + fmt(C.transportTotal) + '</div></div></div>';
       h += '<div style="display:flex;gap:10px;margin-top:20px"><button class="btn btn-outline btn-sm" onclick="Payroll.exportExcel()" style="width:auto"><i class="fas fa-file-excel"></i> Export Excel</button></div>';
       el.innerHTML = h;
-      btn.disabled = false; btn.innerHTML = '<i class="fas fa-calculator"></i> Hitung Payroll';
-    }).catch(function(e) {
+      
+    } catch (e) {
       console.error('Payroll error:', e);
       document.getElementById('prResult').innerHTML = '<div class="import-result" style="background:var(--danger-dim);color:var(--danger);border:1px solid rgba(239,68,68,.2)"><i class="fas fa-exclamation-circle"></i> Gagal: ' + e.message + '</div>';
+    } finally {
       btn.disabled = false; btn.innerHTML = '<i class="fas fa-calculator"></i> Hitung Payroll';
-    });
+    }
   }
 
   function exportExcel() {
-    if (!payrollRows.length) { toast('Hitung dulu','warning'); return; }
+    if (!payrollRows.length) { toast('Hitung dulu', 'warning'); return; }
     var bulanLabel = bulanNama[parseInt(document.getElementById('prBulan').value)];
     var tahun = document.getElementById('prTahun').value;
     var data = [];
     for (var i = 0; i < payrollRows.length; i++) {
       var k = payrollRows[i];
-      data.push({'No':i+1,'Nama':k.nama,'Jabatan':k.jabatan,'Gaji Pokok':k.gajiPokok,'Tuslah':k.pTuslah,'Tindakan':k.pTindakan,'Makan':k.makan,'Omzet':k.omzet,'Transport':k.transport,'THR Apotek':k.thrApotek,'TOTAL':k.total});
+      data.push({ 'No': i + 1, 'Nama': k.nama, 'Jabatan': k.jabatan, 'Gaji Pokok': k.gajiPokok, 'Tuslah': k.pTuslah, 'Tindakan': k.pTindakan, 'Makan': k.makan, 'Omzet': k.omzet, 'Transport': k.transport, 'THR Apotek': k.thrApotek, 'TOTAL': k.total });
     }
     var ws = XLSX.utils.json_to_sheet(data);
-    ws['!cols'] = [{wch:6},{wch:20},{wch:18},{wch:16},{wch:16},{wch:16},{wch:16},{wch:16},{wch:16},{wch:16},{wch:18}];
+    ws['!cols'] = [{ wch: 6 }, { wch: 20 }, { wch: 18 }, { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 18 }];
     var wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Payroll');
     XLSX.writeFile(wb, 'payroll_' + bulanLabel + '_' + tahun + '.xlsx');
-    toast('Export berhasil','success');
+    toast('Export berhasil', 'success');
   }
 
   window.Payroll = { exportExcel: exportExcel };
-  var obs = new MutationObserver(function(){if(page.classList.contains('active'))render();});
-  obs.observe(page, {attributes:true, attributeFilter:['class']});
+  
+  var obs = new MutationObserver(function() { if (page.classList.contains('active')) render(); });
+  obs.observe(page, { attributes: true, attributeFilter: ['class'] });
 });
