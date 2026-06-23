@@ -5,7 +5,7 @@ registerModule('obat', function() {
   let unsubObat = null;
   const isAdmin = userRole === 'admin';
 
-  const KATEGORI_LIST = ['Analgesik-Antipiretik','Antibiotik','Antihistamin','Antasida-Gastrointestinal','Antidiabetik','Antihipertensi','Kortikosteroid','Vitamin-Suplemen','Batuk-Pilek','Antialergi','Antijamur','Antiinflamasi','Steril-Antiseptik','Obat Topikal','Herbal','Lainnya'];
+  const KATEGORI_LIST = ['Analgesik-Antipiretik','Antibiotik','Antihistamin','Antasida-Gastrointestinal','Antidiabetik','Antihipertensi','Kortikosteroid','Vitamin-Suplemen','Batuk-Pilek','Antialergi','Lainnya'];
 
   function render() {
     if (unsubObat) { unsubObat(); unsubObat = null; }
@@ -149,13 +149,13 @@ registerModule('obat', function() {
     document.getElementById('obKategori').selectedIndex = 0; document.getElementById('obSediaan').selectedIndex = 0; document.getElementById('obSatuan').selectedIndex = 0;
     document.getElementById('obHPP').value = ''; document.getElementById('obHargaJual').value = ''; document.getElementById('obStok').value = '0'; document.getElementById('obMinStok').value = '';
     openModal('modalObat'); document.getElementById('obKode').focus();
-  }
+  });
 
   function edit(id) {
     const o = allObat.find(x => x.id === id); if (!o) return;
     document.getElementById('modalObatTitle').textContent = 'Edit Obat'; document.getElementById('obEditId').value = o.id;
-    document.getElementById('obKode').value = o.kodeObat||''; document.getElementById('obGenerik').value = o.namaGenerik||''; document.getElementById('obMerek').value = o.namaMerek||''; document.getElementById('obKekuatan').value = o.kekuatan||'';
-    document.getElementById('obHPP').value = o.hargaBeli||''; document.getElementById('obHargaJual').value = o.hargaJual||''; document.getElementById('obStok').value = o.stock||''; document.getElementById('obMinStok').value = o.minStock||'';
+    document.getElementById('obKode').value = o.kodeObat||''; document.getElementById('obGenerik').value = o.namaGenerik||''; document.getElementById('obMerek').value = o.namaMerek||''; document.[...]
+    document.getElementById('obHPP').value = o.hargaBeli||''; document.getElementById('obHargaJual').value = o.hargaJual||''; document.getElementById('obStok').value = o.stock||''; document.getEl[...]
     setSel('obKategori', o.kategori); setSel('obSediaan', o.sediaan); setSel('obSatuan', o.satuan);
     openModal('modalObat');
   }
@@ -240,7 +240,7 @@ registerModule('obat', function() {
         document.getElementById('importCount').textContent = importData.length;
         const mx = Math.min(importData.length, 50);
         let h = '<table><thead><tr><th>No</th><th>Kode</th><th>Nama</th><th>HPP</th><th>Harga</th><th>Stok</th></tr></thead><tbody>';
-        for (let j = 0; j < mx; j++) { const row = importData[j]; h += `<tr><td>${row.no}</td><td>${row.kodeObat}</td><td>${row.namaGenerik}</td><td>${fmt(row.hargaBeli)}</td><td>${fmt(row.hargaJual)}</td><td>${row.stock}</td></tr>`; }
+        for (let j = 0; j < mx; j++) { const row = importData[j]; h += `<tr><td>${row.no}</td><td>${row.kodeObat}</td><td>${row.namaGenerik}</td><td>${fmt(row.hargaBeli)}</td><td>${fmt(row.harga[...])}
         if (importData.length > 50) h += `<tr><td colspan="6" style="text-align:center;color:var(--muted)">...+${importData.length - 50}</td></tr>`;
         h += '</tbody></table>';
         document.getElementById('importPreview').innerHTML = h;
@@ -257,18 +257,18 @@ registerModule('obat', function() {
     let suc = 0;
     const batch = db.batch();
     importData.forEach(d => { const ref = db.collection('obat').doc(); batch.set(ref, { ...d, status: 'aktif', createdAt: now() }); suc++; });
-    try { await batch.commit(); document.getElementById('importResult').innerHTML = `<div class="import-result success">Berhasil import ${suc} obat.</div>`; toast('Import selesai', 'success'); } catch (e) { toast('Gagal: ' + e.message, 'error'); }
+    try { await batch.commit(); document.getElementById('importResult').innerHTML = `<div class="import-result success">Berhasil import ${suc} obat.</div>`; toast('Import selesai', 'success'); } [...]
     btn.disabled = false; btn.innerHTML = '<i class="fas fa-upload"></i> Import';
   });
 
   document.getElementById('btnDownloadTemplate').addEventListener('click', () => {
-    const ws = XLSX.utils.json_to_sheet([{ kodeObat: 'OB-001', namaGenerik: 'Paracetamol', namaMerek: 'Panadol', kategori: 'Analgesik-Antipiretik', sediaan: 'Tablet', kekuatan: '500mg', satuan: 'butir', hargaBeli: 1000, hargaJual: 1500, stock: 100, minStock: 50 }]);
+    const ws = XLSX.utils.json_to_sheet([{ kodeObat: 'OB-001', namaGenerik: 'Paracetamol', namaMerek: 'Panadol', kategori: 'Analgesik-Antipiretik', sediaan: 'Tablet', kekuatan: '500mg', satuan: 'butir', hargaBeli: 0, hargaJual: 0, stock: 0 }]);
     const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Template'); XLSX.writeFile(wb, 'template_obat.xlsx');
   });
 
   function doExport() {
     if (!allObat.length) { toast('Tidak ada data', 'warning'); return; }
-    const data = allObat.map(o => ({ 'Kode': o.kodeObat, 'Nama Generik': o.namaGenerik, 'Merek': o.namaMerek, 'Kategori': o.kategori, 'HPP': o.hargaBeli, 'Harga Jual': o.hargaJual, 'Stok': o.stock, 'Satuan': o.satuan }));
+    const data = allObat.map(o => ({ 'Kode': o.kodeObat, 'Nama Generik': o.namaGenerik, 'Merek': o.namaMerek, 'Kategori': o.kategori, 'HPP': o.hargaBeli, 'Harga Jual': o.hargaJual, 'Stok': o.stock ?? o.stok ?? 0 }));
     const ws = XLSX.utils.json_to_sheet(data); ws['!cols'] = [{ wch: 12 }, { wch: 25 }, { wch: 20 }, { wch: 20 }, { wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 10 }];
     const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Data Obat'); XLSX.writeFile(wb, 'data_obat_' + ts().toISOString().slice(0, 10) + '.xlsx'); toast('Export berhasil', 'success');
   }
