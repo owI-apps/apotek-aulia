@@ -67,9 +67,10 @@ function closeModal(id) { document.getElementById(id).classList.remove('show'); 
 
 function setSel(id, v) { 
   const s = document.getElementById(id); 
-  if (!s || !v) return; 
+  if (!s) return; 
+  const target = v == null ? '' : String(v);
   for (let i = 0; i < s.options.length; i++) { 
-    if (s.options[i].value === v) { s.selectedIndex = i; return; } 
+    if (String(s.options[i].value) === target) { s.selectedIndex = i; return; } 
   } 
 }
 
@@ -130,7 +131,7 @@ const CF_MAP = {
 };
 
 function configToForm() { for (const [elId, key] of Object.entries(CF_MAP)) { const el = document.getElementById(elId); if (el) el.value = C[key] ?? ''; } }
-function formToConfig() { for (const [elId, key] of Object.entries(CF_MAP)) { const el = document.getElementById(elId); if (el) { const v = el.value.trim(); C[key] = (key === 'namaApotek' || key === 'alamat' || key === 'telepon') ? v : parseFloat(v) || 0; } } }
+function formToConfig() { for (const [elId, key] of Object.entries(CF_MAP)) { const el = document.getElementById(elId); if (el) { const v = el.value.trim(); C[key] = (key === 'namaApotek' || key }
 
 async function loadConfig() { 
   try { 
