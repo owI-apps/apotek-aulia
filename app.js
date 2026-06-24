@@ -79,7 +79,7 @@ function hitungPembulatan(sub) {
   return Math.ceil(sub / 1000) * 1000 - sub; 
 }
 
-function escAttr(s) { return String(s || '').replace(/'/g, "\\'").replace(/"/g, '&quot;'); }
+function escAttr(s) { return String(s || '').replace(/'/g, "\\'").replace(/\"/g, '&quot;'); }
 function now() { return firebase.firestore.FieldValue.serverTimestamp(); }
 function ts() { return new Date(); }
 
@@ -131,7 +131,19 @@ const CF_MAP = {
 };
 
 function configToForm() { for (const [elId, key] of Object.entries(CF_MAP)) { const el = document.getElementById(elId); if (el) el.value = C[key] ?? ''; } }
-function formToConfig() { for (const [elId, key] of Object.entries(CF_MAP)) { const el = document.getElementById(elId); if (el) { const v = el.value.trim(); C[key] = (key === 'namaApotek' || key }
+function formToConfig() {
+  for (const [elId, key] of Object.entries(CF_MAP)) {
+    const el = document.getElementById(elId);
+    if (!el) continue;
+    const raw = String(el.value ?? '').trim();
+    // If default config value is a number, parse numeric input; otherwise keep as string
+    if (typeof DC[key] === 'number') {
+      C[key] = raw === '' ? (C[key] ?? DC[key]) : (parseFloat(raw) || 0);
+    } else {
+      C[key] = raw;
+    }
+  }
+}
 
 async function loadConfig() { 
   try { 
@@ -217,116 +229,3 @@ auth.onAuthStateChanged(async user => {
     appShell.style.display = 'none';
   }
 });
-
-// ================================================================
-//  ROLE-BASED UI
-// ================================================================
-function applyRole() {
-  document.querySelectorAll('#sidebarNav .nav-section').forEach(sec => {
-    let anyVisible = false;
-    sec.querySelectorAll('.nav-item').forEach(item => {
-      const roles = (item.dataset.roles || '').split(',');
-      const show = roles.includes(userRole);
-      item.style.display = show ? '' : 'none';
-      if (show) anyVisible = true;
-    });
-    sec.style.display = anyVisible ? '' : 'none';
-  });
-
-  const firstVisible = document.querySelector('#sidebarNav .nav-item[style=""], #sidebarNav .nav-item:not([style])');
-  if (firstVisible) { 
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active')); 
-    firstVisible.classList.add('active'); 
-    navigateTo(firstVisible.dataset.page); 
-  }
-
-  const dn = userData.namaTampilan || currentUser?.email?.split('@')[0] || 'User';
-  document.getElementById('sidebarUser').textContent = dn;
-  document.getElementById('sidebarAvatar').textContent = dn.charAt(0).toUpperCase();
-  const roleLabels = { klinik: 'Klinik', apotek: 'Apotek', admin: 'Administrator' };
-  document.getElementById('sidebarRole').textContent = roleLabels[userRole] || userRole;
-  document.getElementById('roleBadge').innerHTML = `<i class="fas fa-shield-alt"></i> ${roleLabels[userRole] || userRole}`;
-  updateThemeIcon(localStorage.getItem('apotek-theme') || 'light');
-}
-
-// ================================================================
-//  NAVIGASI
-// ================================================================
-function navigateTo(pageId) {
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  const nav = document.querySelector(`.nav-item[data-page="${pageId}"]`);
-  const pg = document.getElementById(`page-${pageId}`);
-  if (nav) nav.classList.add('active');
-  if (pg) pg.classList.add('active');
-  document.getElementById('pageTitle').textContent = PAGE_TITLES[pageId] || 'Dashboard';
-  document.getElementById('sidebar').classList.remove('open');
-  document.getElementById('sidebarOverlay').classList.remove('show');
-  window._currentPage = pageId;
-}
-
-document.getElementById('sidebarNav').addEventListener('click', e => {
-  const item = e.target.closest('.nav-item');
-  if (item && item.dataset.page) navigateTo(item.dataset.page);
-});
-
-document.getElementById('menuToggle').addEventListener('click', () => {
-  document.getElementById('sidebar').classList.toggle('open');
-  document.getElementById('sidebarOverlay').classList.toggle('show');
-});
-
-document.getElementById('sidebarOverlay').addEventListener('click', () => {
-  document.getElementById('sidebar').classList.remove('open');
-  document.getElementById('sidebarOverlay').classList.remove('show');
-});
-
-// ================================================================
-//  GLOBAL DROPDOWN CLOSE (FIX MEMORY LEAK)
-// ================================================================
-document.addEventListener('click', e => {
-  if (!e.target.closest('.search-wrap')) {
-    document.querySelectorAll('.search-dropdown.show').forEach(d => d.classList.remove('show'));
-  }
-});
-
-// ================================================================
-//  CONNECTION STATUS
-// ================================================================
-function updateConn() {
-  const b = document.getElementById('connBadge'), t = document.getElementById('connText');
-  if (navigator.onLine) { b.className = 'conn-badge online'; t.textContent = 'Online'; }
-  else { b.className = 'conn-badge offline'; t.textContent = 'Offline'; }
-}
-window.addEventListener('online', () => { updateConn(); toast('Kembali online', 'success'); });
-window.addEventListener('offline', () => { updateConn(); toast('Offline — data tersimpan lokal', 'warning'); });
-updateConn();
-
-// ================================================================
-//  PWA (ASLI - BUKAN BLOB)
-// ================================================================
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js').catch(err => console.error('SW Failed:', err));
-}
-
-// ================================================================
-//  THEME TOGGLE (CLEAN CODE)
-// ================================================================
-function updateThemeIcon(theme) {
-  const btn = document.getElementById('themeToggle');
-  if (btn) btn.innerHTML = theme === 'dark' ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
-}
-
-(function() {
-  const saved = localStorage.getItem('apotek-theme') || 'light';
-  document.documentElement.setAttribute('data-theme', saved);
-  
-  document.addEventListener('click', e => {
-    if (e.target.closest('#themeToggle')) {
-      const current = document.documentElement.getAttribute('data-theme') || 'light';
-      const next = current === 'dark' ? 'light' : 'dark';
-      document.documentElement.setAttribute('data-theme', next);
-      localStorage.setItem('apotek-theme', next);
-      updateThemeIcon(next);
-    }
-  });
-})();
